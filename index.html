@@ -64,7 +64,7 @@
                     <i data-lucide="download" class="w-4 h-4"></i>
                     <span>Relatório</span>
                 </button>
-                <button onclick="openResetModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium transition border border-rose-200 shadow-xs" title="Zerar Todas as Informações">
+                <button onclick="openResetModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium transition border border-rose-200 shadow-xs" title="Limpar Dados">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     <span class="hidden lg:inline">Zerar Dados</span>
                 </button>
@@ -543,19 +543,38 @@
         </div>
     </div>
 
-    <!-- Modal Confirmação de Zerar Dados -->
+    <!-- Modal Limpar / Zerar Dados (Com opção de Mês ou Tudo) -->
     <div id="resetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-5 text-center">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-5 text-left">
             <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto">
                 <i data-lucide="alert-triangle" class="w-6 h-6"></i>
             </div>
-            <div>
-                <h3 class="text-base font-bold text-slate-900">Zerar Todas as Informações?</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Isso apagará todos os gastos cadastrados, faturas de cartão e redefinirá sua renda. Esta ação não pode ser desfeita.</p>
+            <div class="text-center">
+                <h3 class="text-base font-bold text-slate-900">Limpar Informações</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Selecione o escopo da limpeza que deseja realizar:</p>
             </div>
+            
+            <div class="space-y-3 py-1 text-xs">
+                <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-slate-200 hover:border-rose-300 transition cursor-pointer bg-slate-50">
+                    <input type="radio" name="resetOption" value="month" checked class="mt-0.5 text-rose-600 focus:ring-rose-500 w-4 h-4">
+                    <div>
+                        <span id="resetMonthLabel" class="font-bold text-slate-800 block">Apenas o mês atual</span>
+                        <span class="text-[11px] text-slate-500">Remove apenas os gastos cadastrados neste mês.</span>
+                    </div>
+                </label>
+
+                <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-slate-200 hover:border-rose-300 transition cursor-pointer bg-slate-50">
+                    <input type="radio" name="resetOption" value="all" class="mt-0.5 text-rose-600 focus:ring-rose-500 w-4 h-4">
+                    <div>
+                        <span class="font-bold text-rose-700 block">Zerar TUDO (Todos os meses e renda)</span>
+                        <span class="text-[11px] text-slate-500">Apaga permanentemente todos os registros salvos.</span>
+                    </div>
+                </label>
+            </div>
+
             <div class="flex space-x-3 pt-2">
                 <button type="button" onclick="closeResetModal()" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-xs transition">Cancelar</button>
-                <button type="button" onclick="confirmResetData()" class="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl text-xs shadow-md shadow-rose-600/20 transition">Sim, Zerar Tudo</button>
+                <button type="button" onclick="confirmResetData()" class="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl text-xs shadow-md shadow-rose-600/20 transition">Confirmar</button>
             </div>
         </div>
     </div>
@@ -707,6 +726,11 @@
         }
 
         function openResetModal() {
+            const options = { month: 'long', year: 'numeric' };
+            const formatted = state.currentDate.toLocaleDateString('pt-BR', options);
+            const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+            document.getElementById('resetMonthLabel').textContent = `Apenas o mês atual (${capitalized})`;
+            document.querySelector('input[name="resetOption"][value="month"]').checked = true;
             document.getElementById('resetModal').classList.remove('hidden');
             lucide.createIcons();
         }
@@ -715,12 +739,20 @@
         }
 
         function confirmResetData() {
-            state = {
-                currentDate: new Date(),
-                income: 0.00,
-                incomeSource: "Não definida",
-                expenses: []
-            };
+            const resetOption = document.querySelector('input[name="resetOption"]:checked').value;
+            const activeMonthKey = getActiveMonthKey();
+
+            if (resetOption === 'month') {
+                state.expenses = state.expenses.filter(item => item.monthKey !== activeMonthKey);
+            } else {
+                state = {
+                    currentDate: new Date(),
+                    income: 0.00,
+                    incomeSource: "Não definida",
+                    expenses: []
+                };
+            }
+
             saveStateToStorage();
             closeResetModal();
             calculateAndRender();
@@ -772,7 +804,7 @@
             }
         }
 
-        // Submissão do Formulário de Gastos (com suporte a Divisão Automática e Nome Aberto)
+        // Submissão do Formulário de Gastos
         function handleExpenseSubmit(event) {
             event.preventDefault();
             const editingId = document.getElementById('editingExpenseId').value;
@@ -1063,7 +1095,7 @@
             lucide.createIcons();
         }
 
-        // Renderizar Bloco 2: Cartões de Crédito (Soma TOTAL da fatura independente do responsável para controle + Bloco de Consolidação por Cartão)
+        // Renderizar Bloco 2: Cartões de Crédito
         function renderCardExpensesTable(cardList) {
             const tbody = document.getElementById('cardExpensesTableBody');
             const emptyDiv = document.getElementById('emptyCardExpenses');
@@ -1083,7 +1115,6 @@
             });
             totalEl.textContent = formatMoney(totalInvoice);
 
-            // Renderizar Cards de Consolidação por Cartão
             Object.keys(cardTotals).forEach(cardName => {
                 const cardSum = cardTotals[cardName];
                 const cardEl = document.createElement('div');

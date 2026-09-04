@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Financeiro 50/30/20 Interativo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para gráficos dinâmicos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons para interface refinada -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 tracking-tight">FluxoSmart 50/30/20</h1>
+                    <p class="text-xs text-slate-500">Consultoria Financeira Pessoal & Projeções</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Seletor de Mês Ativo -->
+                <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                    <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-white rounded-md text-slate-600 transition shadow-xs" title="Mês Anterior">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <span id="currentMonthDisplay" class="px-3 text-xs font-semibold text-slate-700 min-w-[110px] text-center">Outubro 2026</span>
+                    <button onclick="changeMonth(1)" class="p-1.5 hover:bg-white rounded-md text-slate-600 transition shadow-xs" title="Próximo Mês">
+                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <button onclick="openSettingsModal()" class="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition border border-emerald-200 shadow-xs">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Renda & Metas</span>
+                </button>
+                <button onclick="openExportModal()" class="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Exportar / Relatório</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+
+        <!-- Alertas de Consultor Financeiro Inteligente -->
+        <div id="financialAdvisorBanner" class="bg-gradient-to-r from-emerald-900 to-slate-900 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-start space-x-4 z-10">
+                <div class="p-3 bg-white/10 rounded-xl backdrop-blur-md text-emerald-400 mt-0.5 md:mt-0">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h2 class="font-semibold text-white text-sm sm:text-base">Diagnóstico do Consultor Virtual</h2>
+                        <span id="advisorBadge" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30">Equilibrado</span>
+                    </div>
+                    <p id="advisorMessage" class="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">Carregando análise financeira personalizada...</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 z-10 w-full md:w-auto justify-end">
+                <button onclick="openAddExpenseModal()" class="w-full md:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl text-xs transition shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-1.5">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Novo Gasto / Cartão</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Cards de Métricas Principais (KPIs) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Renda Líquida -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500">
+                    <span class="text-xs font-medium uppercase tracking-wider">Renda Líquida Mensal</span>
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="wallet-cards" class="w-4 h-4"></i></div>
+                </div>
+                <div class="mt-4">
+                    <h3 id="kpiIncome" class="text-2xl font-bold text-slate-900">R$ 0,00</h3>
+                    <p class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
+                        <span id="kpiIncomeSource" class="font-medium text-slate-700">Salário + Extras</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Total Gasto -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500">
+                    <span class="text-xs font-medium uppercase tracking-wider">Total Gastos do Mês</span>
+                    <div class="p-2 bg-rose-50 text-rose-600 rounded-xl"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
+                </div>
+                <div class="mt-4">
+                    <h3 id="kpiSpent" class="text-2xl font-bold text-slate-900">R$ 0,00</h3>
+                    <p class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
+                        <span id="kpiSpentPercentage" class="font-medium text-rose-600">0%</span> da renda comprometida
+                    </p>
+                </div>
+            </div>
+
+            <!-- Sobra para Poupança -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500">
+                    <span class="text-xs font-medium uppercase tracking-wider">Sobra p/ Poupança & Investir</span>
+                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
+                </div>
+                <div class="mt-4">
+                    <h3 id="kpiSavings" class="text-2xl font-bold text-emerald-600">R$ 0,00</h3>
+                    <p class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
+                        <span id="kpiSavingsRate" class="font-medium text-emerald-600">0%</span> taxa de economia
+                    </p>
+                </div>
+            </div>
+
+            <!-- Saúde 50/30/20 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500">
+                    <span class="text-xs font-medium uppercase tracking-wider">Status Regra 50/30/20</span>
+                    <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i data-lucide="pie-chart" class="w-4 h-4"></i></div>
+                </div>
+                <div class="mt-4">
+                    <h3 id="kpiRuleStatus" class="text-lg font-bold text-slate-900 truncate">Calculando...</h3>
+                    <p class="text-xs text-slate-500 mt-1">Baseado nos tetos ideais</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Comparação Regra 50/30/20 & Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Comparativo Regra 50/30/20 (2 Colunas) -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Análise da Regra 50 / 30 / 20</h3>
+                        <p class="text-xs text-slate-500">Comparação entre o teto ideal e seus gastos atuais</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Meta Automática</span>
+                </div>
+
+                <div class="space-y-5">
+                    <!-- 50% Necessidades -->
+                    <div>
+                        <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
+                            <span class="text-slate-700 flex items-center space-x-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+                                <span>Necessidades (Aluguel, Contas, Supermercado) - Teto 50%</span>
+                            </span>
+                            <span id="labelNeeds" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="barNeeds" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                            <span id="statusNeeds">Ideal: Até 50% da renda</span>
+                            <span id="pctNeeds" class="font-medium">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- 30% Desejos -->
+                    <div>
+                        <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
+                            <span class="text-slate-700 flex items-center space-x-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span>
+                                <span>Desejos / Estilo de Vida (Lazer, Streaming, Restaurantes) - Teto 30%</span>
+                            </span>
+                            <span id="labelWants" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="barWants" class="bg-purple-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                            <span id="statusWants">Ideal: Até 30% da renda</span>
+                            <span id="pctWants" class="font-medium">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- 20% Poupança -->
+                    <div>
+                        <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
+                            <span class="text-slate-700 flex items-center space-x-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+                                <span>Poupança, Investimentos & Dívidas - Meta 20%</span>
+                            </span>
+                            <span id="labelSavings" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                            <div id="barSavings" class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                            <span id="statusSavings">Ideal: Mínimo 20% guardado</span>
+                            <span id="pctSavings" class="font-medium">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Pizza (1 Coluna) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-center">
+                <div class="w-full flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-900">Distribuição</h3>
+                    <span class="text-xs text-slate-500">Por Categoria</span>
+                </div>
+                <div class="relative w-full max-w-[220px] h-[220px] flex items-center justify-center">
+                    <canvas id="expensePieChart"></canvas>
+                </div>
+                <div id="pieChartLegend" class="w-full mt-4 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                    <!-- Gerado por JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Gerenciamento de Gastos & Cartão de Crédito -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Lançamentos & Faturas de Cartão</h3>
+                    <p class="text-xs text-slate-500">Gerencie despesas avulsas, cartões de crédito e itens parcelados (com replicação automática)</p>
+                </div>
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <!-- Filtro de Categoria -->
+                    <select id="filterCategory" onchange="renderExpensesTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 outline-none focus:border-emerald-500">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="necessidades">Necessidades (50%)</option>
+                        <option value="desejos">Desejos (30%)</option>
+                        <option value="poupanca">Poupança / Investimentos (20%)</option>
+                    </select>
+                    <button onclick="openAddExpenseModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-medium transition shadow-xs flex items-center space-x-1.5 whitespace-nowrap">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Adicionar Gasto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela de Gastos -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
+                            <th class="py-3 px-4">Descrição</th>
+                            <th class="py-3 px-4">Categoria 50/30/20</th>
+                            <th class="py-3 px-4">Forma / Cartão</th>
+                            <th class="py-3 px-4">Parcelas</th>
+                            <th class="py-3 px-4">Valor</th>
+                            <th class="py-3 px-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Inserido dinamicamente via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Estado Vazio -->
+            <div id="emptyExpenses" class="hidden py-12 text-center">
+                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="receipt" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-slate-700">Nenhum gasto registrado neste mês</h4>
+                <p class="text-xs text-slate-500 mt-1">Clique em "Adicionar Gasto" para começar a controlar seu orçamento.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Adicionar Gasto / Cartão / Parcelamento -->
+    <div id="expenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-emerald-600"></i>
+                    <span>Novo Gasto / Cartão de Crédito / Parcelado</span>
+                </h3>
+                <button onclick="closeAddExpenseModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Descrição do Gasto / Estabelecimento</label>
+                    <input type="text" id="expDesc" required placeholder="Ex: Supermercado, Compra Notebook, Netflix..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Valor Total (ou da Parcela)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
+                            <input type="number" step="0.01" id="expAmount" required placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Regra 50/30/20 (Destino)</label>
+                        <select id="expCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                            <option value="necessidades">Necessidades (50% - Essencial)</option>
+                            <option value="desejos">Desejos (30% - Estilo de Vida)</option>
+                            <option value="poupanca">Poupança / Dívidas (20% - Metas)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Forma de Pagamento</label>
+                        <select id="expPaymentType" onchange="toggleInstallmentField()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                            <option value="debito">Débito / Pix / Dinheiro</option>
+                            <option value="cartao_credito">Cartão de Crédito à Vista</option>
+                            <option value="cartao_parcelado">Cartão de Crédito Parcelado</option>
+                        </select>
+                    </div>
+                    <div id="creditCardNameContainer">
+                        <label class="block font-semibold text-slate-700 mb-1">Nome do Cartão</label>
+                        <input type="text" id="expCardName" placeholder="Ex: Nubank, Visa Infinite" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium" value="Cartão Principal">
+                    </div>
+                </div>
+
+                <!-- Campos de Parcelamento -->
+                <div id="installmentContainer" class="hidden p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-3">
+                    <div class="flex items-center space-x-2 text-emerald-800 font-semibold">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        <span>Configuração de Parcelas & Replicação Automática</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Número total de parcelas</label>
+                            <input type="number" id="expInstallments" min="2" max="60" value="2" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="flex items-end">
+                            <p class="text-[11px] text-slate-500 leading-tight pb-1">
+                                O valor informado acima será replicado automaticamente para este e para os próximos meses correspondentes às parcelas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeAddExpenseModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Configurações de Renda e Metas -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i data-lucide="wallet-cards" class="w-5 h-5 text-emerald-600"></i>
+                    <span>Configurar Renda e Orçamento</span>
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="settingsForm" onsubmit="handleSettingsSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Renda Líquida Mensal (R$)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
+                        <input type="number" step="0.01" id="settingsIncome" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Esta renda é usada para calcular automaticamente os tetos da regra 50/30/20.</p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Origem da Renda / Descrição</label>
+                    <input type="text" id="settingsSource" placeholder="Ex: Salário + Freelance" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                </div>
+
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 space-y-2">
+                    <h4 class="font-bold text-slate-800">Proporção Padrão 50/30/20</h4>
+                    <ul class="space-y-1 text-[11px]">
+                        <li>• <strong class="text-blue-600">50%</strong> Necessidades (Moradia, Contas, Alimentação)</li>
+                        <li>• <strong class="text-purple-600">30%</strong> Desejos (Lazer, Assinaturas, Compras)</li>
+                        <li>• <strong class="text-emerald-600">20%</strong> Poupança & Investimentos</li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Configurações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Exportar / Relatório Financeiro -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-slate-800"></i>
+                    <span>Relatório & Consultoria em Texto</span>
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-600">Copie o resumo detalhado da sua saúde financeira para compartilhar ou guardar:</p>
+                <textarea id="exportTextContent" readonly class="w-full h-48 bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 font-mono text-[11px] outline-none resize-none custom-scrollbar"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" onclick="closeExportModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Fechar</button>
+                <button type="button" onclick="copyReportToClipboard()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition flex items-center space-x-1.5">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Copiar Relatório</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado Global da Aplicação
+        let state = {
+            currentDate: new Date(), // Ano e Mês ativos
+            income: 5000.00,
+            incomeSource: "Salário Principal",
+            expenses: [] // Lista de gastos
+        };
+
+        let expensePieChartInstance = null;
+
+        // Inicialização ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+            lucide.createIcons();
+            updateMonthDisplay();
+            calculateAndRender();
+        });
+
+        // Manipulação de Meses
+        function changeMonth(direction) {
+            state.currentDate.setMonth(state.currentDate.getMonth() + direction);
+            updateMonthDisplay();
+            calculateAndRender();
+        }
+
+        function updateMonthDisplay() {
+            const options = { month: 'long', year: 'numeric' };
+            const formatted = state.currentDate.toLocaleDateString('pt-BR', options);
+            // Capitalizar primeiro caractere
+            const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+            document.getElementById('currentMonthDisplay').textContent = capitalized;
+        }
+
+        function getActiveMonthKey() {
+            return `${state.currentDate.getFullYear()}-${String(state.currentDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        // Funções de Persistência Local (In-Memory / LocalStorage)
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem('fluxo_smart_state', JSON.stringify(state));
+            } catch (e) {
+                console.error("Erro ao salvar dados", e);
+            }
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const saved = localStorage.getItem('fluxo_smart_state');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state.income = parsed.income || 5000.00;
+                    state.incomeSource = parsed.incomeSource || "Salário Principal";
+                    state.expenses = parsed.expenses || [];
+                } else {
+                    // Dados iniciais de demonstração úteis
+                    loadDemoData();
+                }
+            } catch (e) {
+                console.error("Erro ao carregar dados", e);
+                loadDemoData();
+            }
+        }
+
+        function loadDemoData() {
+            const year = state.currentDate.getFullYear();
+            const month = String(state.currentDate.getMonth() + 1).padStart(2, '0');
+            const monthKey = `${year}-${month}`;
+
+            state.expenses = [
+                { id: '1', monthKey: monthKey, desc: 'Aluguel Apartamento', amount: 1800.00, category: 'necessidades', paymentType: 'debito', cardName: '', installmentInfo: 'À vista' },
+                { id: '2', monthKey: monthKey, desc: 'Supermercado Mensal', amount: 950.00, category: 'necessidades', paymentType: 'cartao_credito', cardName: 'Nubank', installmentInfo: 'Crédito' },
+                { id: '3', monthKey: monthKey, desc: 'Restaurantes & Lazer', amount: 600.00, category: 'desejos', paymentType: 'cartao_credito', cardName: 'Visa', installmentInfo: 'Crédito' },
+                { id: '4', monthKey: monthKey, desc: 'Reserva de Emergência', amount: 1000.00, category: 'poupanca', paymentType: 'debito', cardName: '', installmentInfo: 'Investimento' }
+            ];
+            saveStateToStorage();
+        }
+
+        // Modais Control
+        function openAddExpenseModal() {
+            document.getElementById('expenseForm').reset();
+            document.getElementById('installmentContainer').classList.add('hidden');
+            document.getElementById('expenseModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeAddExpenseModal() {
+            document.getElementById('expenseModal').classList.add('hidden');
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsIncome').value = state.income;
+            document.getElementById('settingsSource').value = state.incomeSource;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function openExportModal() {
+            generateReportText();
+            document.getElementById('exportModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function toggleInstallmentField() {
+            const val = document.getElementById('expPaymentType').value;
+            const container = document.getElementById('installmentContainer');
+            if (val === 'cartao_parcelado') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // Submissão de Novo Gasto (Com Replicação de Parcelas)
+        function handleExpenseSubmit(event) {
+            event.preventDefault();
+            const desc = document.getElementById('expDesc').value;
+            const amountTotal = parseFloat(document.getElementById('expAmount').value);
+            const category = document.getElementById('expCategory').value;
+            const paymentType = document.getElementById('expPaymentType').value;
+            const cardName = document.getElementById('expCardName').value || 'Cartão Principal';
+
+            const activeMonthKey = getActiveMonthKey();
+
+            if (paymentType === 'cartao_parcelado') {
+                const totalInstallments = parseInt(document.getElementById('expInstallments').value) || 2;
+                const installmentValue = parseFloat((amountTotal / totalInstallments).toFixed(2));
+
+                // Gerar parcelas replicadas para os meses seguintes
+                let baseDate = new Date(state.currentDate);
+
+                for (let i = 1; i <= totalInstallments; i++) {
+                    const year = baseDate.getFullYear();
+                    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+                    const mKey = `${year}-${month}`;
+
+                    const newExpense = {
+                        id: 'exp_' + Date.now() + '_' + i,
+                        monthKey: mKey,
+                        desc: `${desc} (${i}/${totalInstallments})`,
+                        amount: installmentValue,
+                        category: category,
+                        paymentType: paymentType,
+                        cardName: cardName,
+                        installmentInfo: `${i}/${totalInstallments} parcelas`
+                    };
+
+                    state.expenses.push(newExpense);
+                    baseDate.setMonth(baseDate.getMonth() + 1);
+                }
+            } else {
+                const newExpense = {
+                    id: 'exp_' + Date.now(),
+                    monthKey: activeMonthKey,
+                    desc: desc,
+                    amount: amountTotal,
+                    category: category,
+                    paymentType: paymentType,
+                    cardName: paymentType === 'cartao_credito' ? cardName : '',
+                    installmentInfo: paymentType === 'cartao_credito' ? 'Crédito à vista' : 'Débito / Pix'
+                };
+                state.expenses.push(newExpense);
+            }
+
+            saveStateToStorage();
+            closeAddExpenseModal();
+            calculateAndRender();
+        }
+
+        // Submissão de Configurações
+        function handleSettingsSubmit(event) {
+            event.preventDefault();
+            state.income = parseFloat(document.getElementById('settingsIncome').value) || 0;
+            state.incomeSource = document.getElementById('settingsSource').value || 'Renda Principal';
+            saveStateToStorage();
+            closeSettingsModal();
+            calculateAndRender();
+        }
+
+        function deleteExpense(id) {
+            state.expenses = state.expenses.filter(item => item.id !== id);
+            saveStateToStorage();
+            calculateAndRender();
+        }
+
+        // Motor Principal de Cálculo & Renderização
+        function calculateAndRender() {
+            const activeMonthKey = getActiveMonthKey();
+            
+            // Filtrar gastos do mês ativo
+            const currentMonthExpenses = state.expenses.filter(item => item.monthKey === activeMonthKey);
+
+            // Totais por categoria
+            let totalNeeds = 0;
+            let totalWants = 0;
+            let totalSavingsExp = 0;
+
+            currentMonthExpenses.forEach(item => {
+                if (item.category === 'necessidades') totalNeeds += item.amount;
+                else if (item.category === 'desejos') totalWants += item.amount;
+                else if (item.category === 'poupanca') totalSavingsExp += item.amount;
+            });
+
+            const totalSpent = totalNeeds + totalWants + totalSavingsExp;
+            const remainingForSavings = state.income - totalSpent;
+            const spentPercentage = state.income > 0 ? (totalSpent / state.income) * 100 : 0;
+            const savingsRate = state.income > 0 ? (Math.max(0, remainingForSavings) / state.income) * 100 : 0;
+
+            // Tetos Ideais Regra 50/30/20
+            const idealNeeds = state.income * 0.50;
+            const idealWants = state.income * 0.30;
+            const idealSavings = state.income * 0.20;
+
+            // Atualizar KPIs na UI
+            document.getElementById('kpiIncome').textContent = formatMoney(state.income);
+            document.getElementById('kpiIncomeSource').textContent = state.incomeSource;
+            document.getElementById('kpiSpent').textContent = formatMoney(totalSpent);
+            document.getElementById('kpiSpentPercentage').textContent = spentPercentage.toFixed(1) + '%';
+            
+            const kpiSavingsEl = document.getElementById('kpiSavings');
+            kpiSavingsEl.textContent = formatMoney(remainingForSavings);
+            if (remainingForSavings < 0) {
+                kpiSavingsEl.className = "text-2xl font-bold text-rose-600";
+            } else {
+                kpiSavingsEl.className = "text-2xl font-bold text-emerald-600";
+            }
+            document.getElementById('kpiSavingsRate').textContent = savingsRate.toFixed(1) + '%';
+
+            // Status 50/30/20 Header Card
+            let statusText = "Orçamento Saudável";
+            if (totalNeeds > idealNeeds) statusText = "Atenção: Necessidades Acima de 50%";
+            if (totalSpent > state.income) statusText = "Alerta: Gastos Acima da Renda!";
+            document.getElementById('kpiRuleStatus').textContent = statusText;
+
+            // Atualizar Barras de Progresso Regra 50/30/20
+            updateProgressBar('Needs', totalNeeds, idealNeeds, 50);
+            updateProgressBar('Wants', totalWants, idealWants, 30);
+            updateProgressBar('Savings', totalSavingsExp, idealSavings, 20);
+
+            // Consultor Financeiro Inteligente (Mensagem Dinâmica)
+            updateAdvisorDiagnostic(totalNeeds, totalWants, totalSavingsExp, idealNeeds, idealWants, idealSavings, state.income, totalSpent);
+
+            // Renderizar Tabela e Gráfico
+            renderExpensesTable();
+            renderPieChart(totalNeeds, totalWants, totalSavingsExp);
+        }
+
+        function updateProgressBar(type, actual, ideal, targetPct) {
+            const pct = state.income > 0 ? (actual / state.income) * 100 : 0;
+            const bar = document.getElementById(`bar${type}`);
+            const label = document.getElementById(`label${type}`);
+            const status = document.getElementById(`status${type}`);
+            const pctEl = document.getElementById(`pct${type}`);
+
+            bar.style.width = Math.min(100, pct) + '%';
+            label.textContent = `${formatMoney(actual)} / ${formatMoney(ideal)}`;
+            pctEl.textContent = pct.toFixed(1) + '%';
+
+            if (type === 'Needs') {
+                bar.className = actual > ideal ? "bg-rose-600 h-3 rounded-full transition-all duration-500" : "bg-blue-600 h-3 rounded-full transition-all duration-500";
+                status.textContent = actual > ideal ? `Acima do teto de ${targetPct}%` : `Ideal: Até ${targetPct}%`;
+            } else if (type === 'Wants') {
+                bar.className = actual > ideal ? "bg-rose-600 h-3 rounded-full transition-all duration-500" : "bg-purple-600 h-3 rounded-full transition-all duration-500";
+                status.textContent = actual > ideal ? `Acima do teto de ${targetPct}%` : `Ideal: Até ${targetPct}%`;
+            } else if (type === 'Savings') {
+                bar.className = actual < ideal ? "bg-amber-500 h-3 rounded-full transition-all duration-500" : "bg-emerald-600 h-3 rounded-full transition-all duration-500";
+                status.textContent = actual < ideal ? `Abaixo da meta de ${targetPct}%` : `Meta de ${targetPct}% atingida!`;
+            }
+        }
+
+        function updateAdvisorDiagnostic(needs, wants, savingsExp, idealNeeds, idealWants, idealSavings, income, totalSpent) {
+            const banner = document.getElementById('financialAdvisorBanner');
+            const badge = document.getElementById('advisorBadge');
+            const msg = document.getElementById('advisorMessage');
+
+            if (income === 0) {
+                badge.textContent = "Configure Renda";
+                badge.className = "px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-semibold rounded-full border border-amber-500/30";
+                msg.textContent = "Defina sua Renda Líquida mensal no botão 'Renda & Metas' para ativar as projeções automáticas.";
+                return;
+            }
+
+            if (totalSpent > income) {
+                badge.textContent = "Déficit Orçamentário";
+                badge.className = "px-2 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] font-semibold rounded-full border border-rose-500/30";
+                msg.textContent = `Atenção financeira! Seus gastos (${formatMoney(totalSpent)}) ultrapassam sua renda (${formatMoney(income)}). Reveja os gastos em Desejos ou ajuste parcelamentos de cartão.`;
+            } else if (needs > idealNeeds) {
+                badge.textContent = "Necessidades Elevadas";
+                badge.className = "px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-semibold rounded-full border border-amber-500/30";
+                msg.textContent = `Seu bloco de Necessidades consome mais de 50% da renda. Tente otimizar contas fixas ou moradia para liberar margem para investimentos.`;
+            } else {
+                badge.textContent = "Saudável & Equilibrado";
+                badge.className = "px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30";
+                msg.textContent = `Parabéns! Suas finanças estão alinhadas com a regra 50/30/20. Sobra líquido para poupança e investimentos com excelente margem de segurança.`;
+            }
+        }
+
+        // Renderização da Tabela de Gastos
+        function renderExpensesTable() {
+            const activeMonthKey = getActiveMonthKey();
+            const filterCat = document.getElementById('filterCategory').value;
+            
+            let filtered = state.expenses.filter(item => item.monthKey === activeMonthKey);
+            if (filterCat !== 'all') {
+                filtered = filtered.filter(item => item.category === filterCat);
+            }
+
+            const tbody = document.getElementById('expensesTableBody');
+            const emptyDiv = document.getElementById('emptyExpenses');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyDiv.classList.remove('hidden');
+                return;
+            } else {
+                emptyDiv.classList.add('hidden');
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+
+                let catBadge = '';
+                if (item.category === 'necessidades') catBadge = '<span class="px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-md border border-blue-200 text-[10px]">Necessidades (50%)</span>';
+                else if (item.category === 'desejos') catBadge = '<span class="px-2 py-0.5 bg-purple-50 text-purple-700 font-medium rounded-md border border-purple-200 text-[10px]">Desejos (30%)</span>';
+                else catBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-medium rounded-md border border-emerald-200 text-[10px]">Poupança (20%)</span>';
+
+                let paymentBadge = '';
+                if (item.paymentType === 'debito') paymentBadge = '<span class="text-slate-600 font-medium">Débito / Pix</span>';
+                else if (item.paymentType === 'cartao_credito') paymentBadge = `<span class="text-slate-700 font-medium">Crédito (${item.cardName})</span>`;
+                else paymentBadge = `<span class="text-indigo-700 font-medium">Parcelado (${item.cardName})</span>`;
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(item.desc)}</td>
+                    <td class="py-3.5 px-4">${catBadge}</td>
+                    <td class="py-3.5 px-4">${paymentBadge}</td>
+                    <td class="py-3.5 px-4 text-slate-500">${escapeHtml(item.installmentInfo)}</td>
+                    <td class="py-3.5 px-4 font-bold text-slate-900">${formatMoney(item.amount)}</td>
+                    <td class="py-3.5 px-4 text-right">
+                        <button onclick="deleteExpense('${item.id}')" class="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Excluir Gasto">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Gráfico de Pizza com Chart.js
+        function renderPieChart(needs, wants, savings) {
+            const ctx = document.getElementById('expensePieChart').getContext('2d');
+            const legendContainer = document.getElementById('pieChartLegend');
+
+            const dataValues = [needs, wants, savings];
+            const hasData = dataValues.some(val => val > 0);
+
+            if (expensePieChartInstance) {
+                expensePieChartInstance.destroy();
+            }
+
+            // Legenda personalizada
+            legendContainer.innerHTML = `
+                <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span><span class="truncate">Necessidades: <strong>${formatMoney(needs)}</strong></span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span><span class="truncate">Desejos: <strong>${formatMoney(wants)}</strong></span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span class="truncate">Poupança: <strong>${formatMoney(savings)}</strong></span></div>
+            `;
+
+            expensePieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Necessidades', 'Desejos', 'Poupança/Invest'],
+                    datasets: [{
+                        data: hasData ? dataValues : [1, 1, 1],
+                        backgroundColor: hasData ? ['#2563eb', '#9333ea', '#059669'] : ['#e2e8f0', '#cbd5e1', '#94a3b8'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (!hasData) return ' Sem dados no mês';
+                                    return ` ${context.label}: ${formatMoney(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // Geração de Relatório para Cópia
+        function generateReportText() {
+            const activeMonthKey = getActiveMonthKey();
+            const currentMonthExpenses = state.expenses.filter(item => item.monthKey === activeMonthKey);
+            
+            let totalNeeds = 0, totalWants = 0, totalSavings = 0;
+            currentMonthExpenses.forEach(item => {
+                if (item.category === 'necessidades') totalNeeds += item.amount;
+                else if (item.category === 'desejos') totalWants += item.amount;
+                else if (item.category === 'poupanca') totalSavings += item.amount;
+            });
+            const totalSpent = totalNeeds + totalWants + totalSavings;
+            const remaining = state.income - totalSpent;
+
+            const options = { month: 'long', year: 'numeric' };
+            const monthName = state.currentDate.toLocaleDateString('pt-BR', options);
+
+            let text = `=== PAINEL FINANCEIRO 50/30/20 ===\n`;
+            text += `Período: ${monthName.toUpperCase()}\n`;
+            text += `Renda Líquida: ${formatMoney(state.income)} (${state.incomeSource})\n`;
+            text += `----------------------------------------\n`;
+            text += `RESUMO DE GASTOS:\n`;
+            text += `• Necessidades (50%): ${formatMoney(totalNeeds)} (Teto ideal: ${formatMoney(state.income * 0.5)})\n`;
+            text += `• Desejos (30%): ${formatMoney(totalWants)} (Teto ideal: ${formatMoney(state.income * 0.3)})\n`;
+            text += `• Poupança/Invest (20%): ${formatMoney(totalSavings)} (Meta ideal: ${formatMoney(state.income * 0.2)})\n`;
+            text += `----------------------------------------\n`;
+            text += `Total Gastos: ${formatMoney(totalSpent)}\n`;
+            text += `Sobra Líquida p/ Poupança: ${formatMoney(remaining)}\n`;
+            text += `========================================\n`;
+            text += `Gerado por FluxoSmart Consultoria Pessoal`;
+
+            document.getElementById('exportTextContent').value = text;
+        }
+
+        function copyReportToClipboard() {
+            const textarea = document.getElementById('exportTextContent');
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alertCustom("Relatório copiado com sucesso para a área de transferência!");
+            } catch (e) {
+                console.error("Erro ao copiar", e);
+            }
+        }
+
+        // Utilitários
+        function formatMoney(val) {
+            return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function alertCustom(msg) {
+            // Notificação leve no rodapé ou console caso necessário
+            console.log(msg);
+        }
+    </script>
+</body>
+</html>

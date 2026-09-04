@@ -154,7 +154,7 @@
             </div>
         </div>
 
-        <!-- Painel de Cobrança de Terceiros (Mãe, Namorada, etc.) -->
+        <!-- Painel de Cobrança de Terceiros -->
         <div id="thirdPartySection" class="hidden bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-5 shadow-xs space-y-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2 text-amber-900 font-bold text-sm">
@@ -163,7 +163,7 @@
                 </div>
                 <span class="text-[11px] bg-amber-200/80 text-amber-900 px-2.5 py-1 rounded-full font-semibold">Valores a Receber de Reembolso</span>
             </div>
-            <p class="text-xs text-amber-800">Estes valores foram gastos por outras pessoas (Mãe, Namorada, etc.) através do seu cartão ou contas, e <strong class="underline">não afetam</strong> o seu orçamento pessoal 50/30/20:</p>
+            <p class="text-xs text-amber-800">Estes valores foram gastos por outras pessoas (ou divididos) através do seu cartão ou contas, e <strong class="underline">não afetam</strong> o seu orçamento pessoal 50/30/20:</p>
             <div id="thirdPartyCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
                 <!-- Gerado dinamicamente -->
             </div>
@@ -304,19 +304,33 @@
                 <div class="flex items-center space-x-3">
                     <div class="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl"><i data-lucide="credit-card" class="w-5 h-5"></i></div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Bloco 2: Despesas com Cartões de Crédito</h3>
-                        <p class="text-xs text-slate-500">Faturas, compras parceladas e gastos divididos (Mãe, Namorada, EU)</p>
+                        <h3 class="text-base font-bold text-slate-900">Bloco 2: Despesas com Cartões de Crédito (Fatura Completa)</h3>
+                        <p class="text-xs text-slate-500">Soma todos os gastos do cartão para controle da fatura (incluindo terceiros)</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
                     <div class="text-right">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Cartões</span>
+                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Geral Faturas</span>
                         <span id="totalCardExpenses" class="text-base font-bold text-indigo-600">R$ 0,00</span>
                     </div>
                     <button onclick="openAddExpenseModalWithGroup('cartao')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-medium transition shadow-xs flex items-center space-x-1.5 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>Adicionar no Cartão</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Sub-bloco: Consolidação por Nome do Cartão -->
+            <div class="p-5 bg-slate-50/80 border-b border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+                        <span>Consolidação de Faturas por Cartão</span>
+                    </span>
+                    <span class="text-[11px] text-slate-500">Soma total de cada cartão no mês</span>
+                </div>
+                <div id="cardConsolidationContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Gerado dinamicamente -->
                 </div>
             </div>
 
@@ -371,20 +385,42 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Responsável pelo Gasto</label>
+                        <label class="block font-semibold text-slate-700 mb-1">Responsável Principal</label>
                         <select id="expOwnerSelect" onchange="checkCustomOwner()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
                             <option value="EU">EU (Minhas Contas)</option>
-                            <option value="Mãe">Mãe (Para Cobrar / Reembolso)</option>
-                            <option value="Namorada">Namorada (Para Cobrar / Reembolso)</option>
-                            <option value="Outro">Outro (Outra pessoa)</option>
+                            <option value="Outro">Outra Pessoa (Para Cobrança / Reembolso)</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Input customizado caso seja Outro -->
+                <!-- Input customizado de Nome da Outra Pessoa -->
                 <div id="customOwnerContainer" class="hidden">
-                    <label class="block font-semibold text-slate-700 mb-1">Nome de quem vai pagar / reembolsar</label>
-                    <input type="text" id="expCustomOwner" placeholder="Ex: Irmão, Amigo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <label class="block font-semibold text-slate-700 mb-1">Nome de quem vai pagar / reembolsar (Ex: Mãe, Namorada, João...)</label>
+                    <input type="text" id="expCustomOwner" placeholder="Digite o nome da pessoa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                </div>
+
+                <!-- Opção de Divisão Automática com Campo Aberto -->
+                <div id="splitSection" class="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200 space-y-3">
+                    <label class="flex items-center space-x-2 cursor-pointer font-semibold text-amber-900">
+                        <input type="checkbox" id="expSplitToggle" onchange="toggleSplitFields()" class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4">
+                        <span>Dividir esta compra com outra pessoa?</span>
+                    </label>
+                    <div id="splitDetailsContainer" class="hidden space-y-3 pt-2 border-t border-amber-200/60">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-amber-900 mb-1 text-[11px]">Nome da outra pessoa</label>
+                                <input type="text" id="expSplitPersonName" placeholder="Ex: Mãe, Namorada, Irmão..." class="w-full bg-white border border-amber-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-amber-500 font-medium text-xs">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-amber-900 mb-1 text-[11px]">Valor da parte dela (R$)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 font-medium">R$</span>
+                                    <input type="number" step="0.01" id="expSplitAmount" placeholder="0,00" class="w-full bg-white border border-amber-200 rounded-xl pl-9 pr-3.5 py-2 text-slate-800 outline-none focus:border-amber-500 font-medium text-xs">
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-amber-800">O valor total será lançado e a parte da outra pessoa irá automaticamente para o painel de cobranças (reembolso).</p>
+                    </div>
                 </div>
 
                 <div>
@@ -514,7 +550,7 @@
                 <i data-lucide="alert-triangle" class="w-6 h-6"></i>
             </div>
             <div>
-                <h3 class="text-base font-bold text-slate-900">Zeradas Todas as Informações?</h3>
+                <h3 class="text-base font-bold text-slate-900">Zerar Todas as Informações?</h3>
                 <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Isso apagará todos os gastos cadastrados, faturas de cartão e redefinirá sua renda. Esta ação não pode ser desfeita.</p>
             </div>
             <div class="flex space-x-3 pt-2">
@@ -592,8 +628,8 @@
                 { id: '1', monthKey: monthKey, expenseGroup: 'fixa', desc: 'Aluguel Apartamento', amount: 1800.00, category: 'necessidades', owner: 'EU', paymentType: 'recorrente', cardName: '', installmentInfo: 'Recorrente' },
                 { id: '2', monthKey: monthKey, expenseGroup: 'fixa', desc: 'Internet Fibra', amount: 120.00, category: 'necessidades', owner: 'EU', paymentType: 'recorrente', cardName: '', installmentInfo: 'Recorrente' },
                 { id: '3', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Supermercado Mensal', amount: 950.00, category: 'necessidades', owner: 'EU', paymentType: 'pontual', cardName: 'Nubank', installmentInfo: 'À vista' },
-                { id: '4', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Salão da Mãe', amount: 250.00, category: 'desejos', owner: 'Mãe', paymentType: 'pontual', cardName: 'Nubank', installmentInfo: 'Cobrar da Mãe' },
-                { id: '5', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Presente Namorada', amount: 180.00, category: 'desejos', owner: 'Namorada', paymentType: 'pontual', cardName: 'Visa', installmentInfo: 'Cobrar Namorada' }
+                { id: '4', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Salão da Mãe', amount: 250.00, category: 'desejos', owner: 'Mãe', paymentType: 'pontual', cardName: 'Nubank', installmentInfo: 'Cobrar' },
+                { id: '5', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Presente Namorada', amount: 180.00, category: 'desejos', owner: 'Namorada', paymentType: 'pontual', cardName: 'Visa', installmentInfo: 'Cobrar' }
             ];
             saveStateToStorage();
         }
@@ -605,6 +641,8 @@
             document.getElementById('expGroup').value = group;
             document.getElementById('expOwnerSelect').value = 'EU';
             document.getElementById('customOwnerContainer').classList.add('hidden');
+            document.getElementById('expSplitToggle').checked = false;
+            document.getElementById('splitDetailsContainer').classList.add('hidden');
             document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i><span>Novo Lançamento</span>';
             document.getElementById('expenseSubmitBtn').textContent = 'Salvar Gasto';
             toggleGroupFields();
@@ -620,14 +658,17 @@
             document.getElementById('expGroup').value = item.expenseGroup || 'fixa';
             
             const ownerSelect = document.getElementById('expOwnerSelect');
-            if (['EU', 'Mãe', 'Namorada'].includes(item.owner)) {
-                ownerSelect.value = item.owner;
+            if (item.owner === 'EU') {
+                ownerSelect.value = 'EU';
                 document.getElementById('customOwnerContainer').classList.add('hidden');
             } else {
                 ownerSelect.value = 'Outro';
                 document.getElementById('customOwnerContainer').classList.remove('hidden');
                 document.getElementById('expCustomOwner').value = item.owner;
             }
+
+            document.getElementById('expSplitToggle').checked = false;
+            document.getElementById('splitDetailsContainer').classList.add('hidden');
 
             document.getElementById('expDesc').value = item.desc;
             document.getElementById('expAmount').value = item.amount;
@@ -706,6 +747,16 @@
             }
         }
 
+        function toggleSplitFields() {
+            const isChecked = document.getElementById('expSplitToggle').checked;
+            const container = document.getElementById('splitDetailsContainer');
+            if (isChecked) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
         function togglePaymentTypeFields() {
             const val = document.getElementById('expPaymentType').value;
             const instCont = document.getElementById('installmentContainer');
@@ -721,7 +772,7 @@
             }
         }
 
-        // Submissão do Formulário de Gastos
+        // Submissão do Formulário de Gastos (com suporte a Divisão Automática e Nome Aberto)
         function handleExpenseSubmit(event) {
             event.preventDefault();
             const editingId = document.getElementById('editingExpenseId').value;
@@ -738,6 +789,7 @@
             const cardName = expenseGroup === 'cartao' ? (document.getElementById('expCardName').value || 'Nubank') : '';
             const paymentType = document.getElementById('expPaymentType').value;
             const activeMonthKey = getActiveMonthKey();
+            const isSplit = document.getElementById('expSplitToggle').checked;
 
             if (editingId) {
                 const item = state.expenses.find(x => x.id === editingId);
@@ -749,6 +801,45 @@
                     item.category = category;
                     item.cardName = cardName;
                     item.paymentType = paymentType;
+                }
+            } else if (isSplit) {
+                const splitPersonName = document.getElementById('expSplitPersonName').value.trim() || 'Outra Pessoa';
+                const splitOtherAmount = parseFloat(document.getElementById('expSplitAmount').value) || 0;
+                const myAmount = amountTotal - splitOtherAmount;
+
+                if (myAmount < 0) {
+                    alert("O valor da outra pessoa não pode ser maior que o valor total.");
+                    return;
+                }
+
+                if (myAmount > 0) {
+                    state.expenses.push({
+                        id: 'exp_' + Date.now() + '_eu',
+                        monthKey: activeMonthKey,
+                        expenseGroup: expenseGroup,
+                        owner: 'EU',
+                        desc: `${desc} (Minha parte)`,
+                        amount: myAmount,
+                        category: category,
+                        cardName: cardName,
+                        paymentType: paymentType,
+                        installmentInfo: 'Dividido'
+                    });
+                }
+
+                if (splitOtherAmount > 0) {
+                    state.expenses.push({
+                        id: 'exp_' + Date.now() + '_other',
+                        monthKey: activeMonthKey,
+                        expenseGroup: expenseGroup,
+                        owner: splitPersonName,
+                        desc: `${desc} (Parte de ${splitPersonName})`,
+                        amount: splitOtherAmount,
+                        category: category,
+                        cardName: cardName,
+                        paymentType: paymentType,
+                        installmentInfo: `Reembolso de ${splitPersonName}`
+                    });
                 }
             } else {
                 if (paymentType === 'cartao_parcelado') {
@@ -837,16 +928,6 @@
 
             const myExpenses = currentMonthExpenses.filter(item => (item.owner || 'EU').toUpperCase() === 'EU');
             const thirdPartyExpenses = currentMonthExpenses.filter(item => (item.owner || 'EU').toUpperCase() !== 'EU');
-
-            let totalFixed = 0;
-            let totalCards = 0;
-
-            currentMonthExpenses.forEach(item => {
-                if ((item.owner || 'EU').toUpperCase() === 'EU') {
-                    if (item.expenseGroup === 'fixa') totalFixed += item.amount;
-                    if (item.expenseGroup === 'cartao') totalCards += item.amount;
-                }
-            });
 
             let totalNeeds = 0;
             let totalWants = 0;
@@ -982,21 +1063,47 @@
             lucide.createIcons();
         }
 
-        // Renderizar Bloco 2: Cartões de Crédito
+        // Renderizar Bloco 2: Cartões de Crédito (Soma TOTAL da fatura independente do responsável para controle + Bloco de Consolidação por Cartão)
         function renderCardExpensesTable(cardList) {
             const tbody = document.getElementById('cardExpensesTableBody');
             const emptyDiv = document.getElementById('emptyCardExpenses');
             const totalEl = document.getElementById('totalCardExpenses');
+            const consolidationContainer = document.getElementById('cardConsolidationContainer');
             tbody.innerHTML = '';
+            consolidationContainer.innerHTML = '';
 
-            let total = 0;
+            let totalInvoice = 0;
+            const cardTotals = {};
+
             cardList.forEach(item => {
-                if ((item.owner || 'EU').toUpperCase() === 'EU') total += item.amount;
+                totalInvoice += item.amount;
+                const cName = (item.cardName || 'Principal').trim();
+                if (!cardTotals[cName]) cardTotals[cName] = 0;
+                cardTotals[cName] += item.amount;
             });
-            totalEl.textContent = formatMoney(total);
+            totalEl.textContent = formatMoney(totalInvoice);
+
+            // Renderizar Cards de Consolidação por Cartão
+            Object.keys(cardTotals).forEach(cardName => {
+                const cardSum = cardTotals[cardName];
+                const cardEl = document.createElement('div');
+                cardEl.className = "bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between";
+                cardEl.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="credit-card" class="w-4 h-4"></i></div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-900 block">${escapeHtml(cardName)}</span>
+                            <span class="text-[10px] text-slate-400">Total da Fatura</span>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold text-indigo-600">${formatMoney(cardSum)}</span>
+                `;
+                consolidationContainer.appendChild(cardEl);
+            });
 
             if (cardList.length === 0) {
                 emptyDiv.classList.remove('hidden');
+                consolidationContainer.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-slate-400">Nenhum cartão cadastrado neste mês.</div>';
                 return;
             }
             emptyDiv.classList.add('hidden');

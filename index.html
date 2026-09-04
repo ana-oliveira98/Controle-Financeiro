@@ -42,7 +42,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold text-slate-900 tracking-tight">FluxoSmart 50/30/20</h1>
-                    <p class="text-xs text-slate-500">Consultoria Financeira Pessoal & Divisão de Contas</p>
+                    <p class="text-xs text-slate-500">Consultoria Financeira Pessoal & Projeções</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -56,6 +56,10 @@
                         <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
                 </div>
+                <button onclick="confirmClearData()" class="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-medium transition border border-rose-200 shadow-xs" title="Zerar todos os dados e preencher do zero">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Zerar Dados</span>
+                </button>
                 <button onclick="openSettingsModal()" class="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition border border-emerald-200 shadow-xs">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                     <span class="hidden sm:inline">Renda & Metas</span>
@@ -88,12 +92,12 @@
             <div class="flex items-center space-x-2 z-10 w-full md:w-auto justify-end">
                 <button onclick="openAddExpenseModal()" class="w-full md:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl text-xs transition shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-1.5">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Novo Gasto / Cartão / Fatura</span>
+                    <span>Novo Gasto / Cartão</span>
                 </button>
             </div>
         </div>
 
-        <!-- Cards de Métricas Principais (KPIs apenas para 'EU') -->
+        <!-- Cards de Métricas Principais (KPIs) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Renda Líquida -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
@@ -109,16 +113,16 @@
                 </div>
             </div>
 
-            <!-- Total Gasto Pessoal (EU) -->
+            <!-- Total Gasto -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div class="flex items-center justify-between text-slate-500">
-                    <span class="text-xs font-medium uppercase tracking-wider">Total Meus Gastos (EU)</span>
+                    <span class="text-xs font-medium uppercase tracking-wider">Total Gastos do Mês</span>
                     <div class="p-2 bg-rose-50 text-rose-600 rounded-xl"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
                 </div>
                 <div class="mt-4">
                     <h3 id="kpiSpent" class="text-2xl font-bold text-slate-900">R$ 0,00</h3>
                     <p class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
-                        <span id="kpiSpentPercentage" class="font-medium text-rose-600">0%</span> da sua renda
+                        <span id="kpiSpentPercentage" class="font-medium text-rose-600">0%</span> da renda comprometida
                     </p>
                 </div>
             </div>
@@ -150,31 +154,17 @@
             </div>
         </div>
 
-        <!-- Painel de Cobrança de Terceiros (Mãe, Namorada, etc.) -->
-        <div id="thirdPartySection" class="hidden bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-5 shadow-xs space-y-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2 text-amber-900 font-bold text-sm">
-                    <i data-lucide="users" class="w-5 h-5 text-amber-600"></i>
-                    <span>Painel de Cobrança — Gastos de Terceiros no seu Cartão / Contas</span>
-                </div>
-                <span class="text-[11px] bg-amber-200/80 text-amber-900 px-2.5 py-1 rounded-full font-semibold">Valores a Receber de Reembolso</span>
-            </div>
-            <p class="text-xs text-amber-800">Estes valores foram gastos por outras pessoas (Mãe, Namorada, etc.) através do seu cartão ou contas, e <strong class="underline">não afetam</strong> o seu orçamento pessoal 50/30/20:</p>
-            <div id="thirdPartyCardsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-                <!-- Gerado dinamicamente -->
-            </div>
-        </div>
-
         <!-- Seção de Comparação Regra 50/30/20 & Gráficos -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
             <!-- Comparativo Regra 50/30/20 (2 Colunas) -->
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Análise da Regra 50 / 30 / 20 (Apenas suas contas - EU)</h3>
-                        <p class="text-xs text-slate-500">Comparação entre o teto ideal e seus gastos pessoais</p>
+                        <h3 class="text-base font-bold text-slate-900">Análise da Regra 50 / 30 / 20</h3>
+                        <p class="text-xs text-slate-500">Comparação entre o teto ideal e seus gastos atuais</p>
                     </div>
-                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Exclusivo EU</span>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Meta Automática</span>
                 </div>
 
                 <div class="space-y-5">
@@ -183,7 +173,7 @@
                         <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
                             <span class="text-slate-700 flex items-center space-x-1.5">
                                 <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
-                                <span>Necessidades (Aluguel, Contas) - Teto 50%</span>
+                                <span>Necessidades (Aluguel, Contas, Supermercado) - Teto 50%</span>
                             </span>
                             <span id="labelNeeds" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
                         </div>
@@ -201,7 +191,7 @@
                         <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
                             <span class="text-slate-700 flex items-center space-x-1.5">
                                 <span class="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span>
-                                <span>Desejos / Estilo de Vida - Teto 30%</span>
+                                <span>Desejos / Estilo de Vida (Lazer, Streaming, Restaurantes) - Teto 30%</span>
                             </span>
                             <span id="labelWants" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
                         </div>
@@ -237,7 +227,7 @@
             <!-- Gráfico de Pizza (1 Coluna) -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-center">
                 <div class="w-full flex items-center justify-between mb-4">
-                    <h3 class="text-base font-bold text-slate-900">Distribuição (EU)</h3>
+                    <h3 class="text-base font-bold text-slate-900">Distribuição</h3>
                     <span class="text-xs text-slate-500">Por Categoria</span>
                 </div>
                 <div class="relative w-full max-w-[220px] h-[220px] flex items-center justify-center">
@@ -249,106 +239,65 @@
             </div>
         </div>
 
-        <!-- BLOCO 1: DESPESAS FIXAS & RECORRENTES -->
+        <!-- Seção de Gerenciamento de Gastos & Cartão de Crédito -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-blue-50 text-blue-700 rounded-xl"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Bloco 1: Despesas Fixas & Recorrentes</h3>
-                        <p class="text-xs text-slate-500">Aluguel, contas da casa, internet, assinaturas e obrigações mensais</p>
-                    </div>
+            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Lançamentos & Faturas de Cartão</h3>
+                    <p class="text-xs text-slate-500">Gerencie despesas avulsas, cartões de crédito e itens parcelados (com replicação automática)</p>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <div class="text-right">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Despesas Fixas</span>
-                        <span id="totalFixedExpenses" class="text-base font-bold text-blue-600">R$ 0,00</span>
-                    </div>
-                    <button onclick="openAddExpenseModalWithGroup('fixa')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition shadow-xs flex items-center space-x-1.5 whitespace-nowrap">
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <!-- Filtro de Categoria -->
+                    <select id="filterCategory" onchange="renderExpensesTable()" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-3 py-2 outline-none focus:border-emerald-500">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="necessidades">Necessidades (50%)</option>
+                        <option value="desejos">Desejos (30%)</option>
+                        <option value="poupanca">Poupança / Investimentos (20%)</option>
+                    </select>
+                    <button onclick="openAddExpenseModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-medium transition shadow-xs flex items-center space-x-1.5 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Adicionar Despesa Fixa</span>
+                        <span>Adicionar Gasto</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Tabela de Despesas Fixas -->
+            <!-- Tabela de Gastos -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
+                        <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
                             <th class="py-3 px-4">Descrição</th>
                             <th class="py-3 px-4">Categoria 50/30/20</th>
-                            <th class="py-3 px-4">Responsável</th>
-                            <th class="py-3 px-4">Detalhes</th>
+                            <th class="py-3 px-4">Forma / Cartão</th>
+                            <th class="py-3 px-4">Parcelas</th>
                             <th class="py-3 px-4">Valor</th>
                             <th class="py-3 px-4 text-right">Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="fixedExpensesTableBody" class="divide-y divide-slate-100 text-slate-700">
-                        <!-- Inserido dinamicamente -->
+                    <tbody id="expensesTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Inserido dinamicamente via JavaScript -->
                     </tbody>
                 </table>
             </div>
-            <div id="emptyFixedExpenses" class="hidden py-8 text-center text-xs text-slate-400">
-                Nenhuma despesa fixa registrada para este mês.
-            </div>
-        </div>
-
-        <!-- BLOCO 2: DESPESAS COM CARTÕES DE CRÉDITO -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl"><i data-lucide="credit-card" class="w-5 h-5"></i></div>
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Bloco 2: Despesas com Cartões de Crédito</h3>
-                        <p class="text-xs text-slate-500">Faturas, compras parceladas e gastos divididos (Mãe, Namorada, EU)</p>
-                    </div>
+            <!-- Estado Vazio -->
+            <div id="emptyExpenses" class="hidden py-12 text-center">
+                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="receipt" class="w-6 h-6"></i>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <div class="text-right">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Cartões (Geral)</span>
-                        <span id="totalCardExpenses" class="text-base font-bold text-indigo-600">R$ 0,00</span>
-                    </div>
-                    <button onclick="openAddExpenseModalWithGroup('cartao')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-medium transition shadow-xs flex items-center space-x-1.5 whitespace-nowrap">
-                        <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Adicionar no Cartão</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tabela de Cartões de Crédito -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
-                            <th class="py-3 px-4">Descrição</th>
-                            <th class="py-3 px-4">Cartão</th>
-                            <th class="py-3 px-4">Categoria 50/30/20</th>
-                            <th class="py-3 px-4">Responsável</th>
-                            <th class="py-3 px-4">Parcelas / Tipo</th>
-                            <th class="py-3 px-4">Valor</th>
-                            <th class="py-3 px-4 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cardExpensesTableBody" class="divide-y divide-slate-100 text-slate-700">
-                        <!-- Inserido dinamicamente -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="emptyCardExpenses" class="hidden py-8 text-center text-xs text-slate-400">
-                Nenhum gasto de cartão de crédito registrado neste mês.
+                <h4 class="text-sm font-semibold text-slate-700">Nenhum gasto registrado neste mês</h4>
+                <p class="text-xs text-slate-500 mt-1">Clique em "Adicionar Gasto" para começar a controlar seu orçamento.</p>
             </div>
         </div>
 
     </main>
 
-    <!-- Modal Adicionar / Editar Gasto -->
+    <!-- Modal Adicionar Gasto / Cartão / Parcelamento -->
     <div id="expenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 id="expenseModalTitle" class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
                     <i data-lucide="credit-card" class="w-5 h-5 text-emerald-600"></i>
-                    <span>Lançamento de Gasto</span>
+                    <span>Novo Gasto / Cartão de Crédito / Parcelado</span>
                 </h3>
                 <button onclick="closeAddExpenseModal()" class="text-slate-400 hover:text-slate-600 p-1">
                     <i data-lucide="x" class="w-5 h-5"></i>
@@ -356,41 +305,14 @@
             </div>
 
             <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-4 text-xs">
-                <input type="hidden" id="editingExpenseId" value="">
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Bloco de Despesa</label>
-                        <select id="expGroup" onchange="toggleGroupFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
-                            <option value="fixa">Despesa Fixa / Recorrente</option>
-                            <option value="cartao">Cartão de Crédito</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Responsável pelo Gasto</label>
-                        <select id="expOwnerSelect" onchange="checkCustomOwner()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
-                            <option value="EU">EU (Minhas Contas)</option>
-                            <option value="Mãe">Mãe (Para Cobrar)</option>
-                            <option value="Namorada">Namorada (Para Cobrar)</option>
-                            <option value="Outro">Outro (Outra pessoa)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Input customizado caso seja Outro -->
-                <div id="customOwnerContainer" class="hidden">
-                    <label class="block font-semibold text-slate-700 mb-1">Nome de quem vai pagar / reembolsar</label>
-                    <input type="text" id="expCustomOwner" placeholder="Ex: Irmão, Amigo..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
-                </div>
-
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Descrição / Estabelecimento</label>
-                    <input type="text" id="expDesc" required placeholder="Ex: Aluguel, Supermercado, Compra no Shopping..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <label class="block font-semibold text-slate-700 mb-1">Descrição do Gasto / Estabelecimento</label>
+                    <input type="text" id="expDesc" required placeholder="Ex: Supermercado, Compra Notebook, Netflix..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Valor Total (ou da Parcela) (R$)</label>
+                        <label class="block font-semibold text-slate-700 mb-1">Valor Total (ou da Parcela)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
                             <input type="number" step="0.01" id="expAmount" required placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
@@ -401,42 +323,48 @@
                         <select id="expCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
                             <option value="necessidades">Necessidades (50% - Essencial)</option>
                             <option value="desejos">Desejos (30% - Estilo de Vida)</option>
-                            <option value="poupanca">Poupança / Investimentos (20%)</option>
+                            <option value="poupanca">Poupança / Dívidas (20% - Metas)</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Campo Nome do Cartão (Aparece se for Cartão) -->
-                <div id="cardNameContainer" class="hidden">
-                    <label class="block font-semibold text-slate-700 mb-1">Nome do Cartão de Crédito</label>
-                    <input type="text" id="expCardName" placeholder="Ex: Nubank, Visa Infinite, Mastercard" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium" value="Nubank">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Tipo de Pagamento / Recorrência</label>
-                        <select id="expPaymentType" onchange="togglePaymentTypeFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
-                            <option value="pontual">Pontual / À vista</option>
-                            <option value="recorrente">Recorrente (Mensal contínuo)</option>
-                            <option value="cartao_parcelado">Cartão Parcelado</option>
+                        <label class="block font-semibold text-slate-700 mb-1">Forma de Pagamento</label>
+                        <select id="expPaymentType" onchange="toggleInstallmentField()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                            <option value="debito">Débito / Pix / Dinheiro</option>
+                            <option value="cartao_credito">Cartão de Crédito à Vista</option>
+                            <option value="cartao_parcelado">Cartão de Crédito Parcelado</option>
                         </select>
                     </div>
-                    <div id="recurringMonthsContainer" class="hidden">
-                        <label class="block font-semibold text-slate-700 mb-1">Estender para quantos meses?</label>
-                        <input type="number" id="expRecurringMonths" min="2" max="24" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <div id="creditCardNameContainer">
+                        <label class="block font-semibold text-slate-700 mb-1">Nome do Cartão</label>
+                        <input type="text" id="expCardName" placeholder="Ex: Nubank, Visa Infinite" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium" value="Cartão Principal">
                     </div>
                 </div>
 
-                <!-- Parcelas Container -->
-                <div id="installmentContainer" class="hidden p-3.5 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-2">
-                    <label class="block font-semibold text-indigo-900 mb-1">Número total de parcelas</label>
-                    <input type="number" id="expInstallments" min="2" max="60" value="2" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-indigo-500">
-                    <p class="text-[10px] text-indigo-700">O valor será dividido e replicado automaticamente para os próximos meses.</p>
+                <!-- Campos de Parcelamento -->
+                <div id="installmentContainer" class="hidden p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-3">
+                    <div class="flex items-center space-x-2 text-emerald-800 font-semibold">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        <span>Configuração de Parcelas & Replicação Automática</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Número total de parcelas</label>
+                            <input type="number" id="expInstallments" min="2" max="60" value="2" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="flex items-end">
+                            <p class="text-[11px] text-slate-500 leading-tight pb-1">
+                                O valor informado acima será replicado automaticamente para este e para os próximos meses correspondentes às parcelas.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeAddExpenseModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Cancelar</button>
-                    <button type="submit" id="expenseSubmitBtn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Gasto</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Gasto</button>
                 </div>
             </form>
         </div>
@@ -462,11 +390,21 @@
                         <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
                         <input type="number" step="0.01" id="settingsIncome" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
                     </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Esta renda é usada para calcular automaticamente os tetos da regra 50/30/20.</p>
                 </div>
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Origem da Renda / Descrição</label>
-                    <input type="text" id="settingsSource" placeholder="Ex: Salário Principal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <input type="text" id="settingsSource" placeholder="Ex: Salário + Freelance" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                </div>
+
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 space-y-2">
+                    <h4 class="font-bold text-slate-800">Proporção Padrão 50/30/20</h4>
+                    <ul class="space-y-1 text-[11px]">
+                        <li>• <strong class="text-blue-600">50%</strong> Necessidades (Moradia, Contas, Alimentação)</li>
+                        <li>• <strong class="text-purple-600">30%</strong> Desejos (Lazer, Assinaturas, Compras)</li>
+                        <li>• <strong class="text-emerald-600">20%</strong> Poupança & Investimentos</li>
+                    </ul>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
@@ -503,16 +441,34 @@
         </div>
     </div>
 
+    <div id="clearConfirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-center">
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Zerar Todos os Dados?</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Esta ação apagará todos os gastos lançados, histórico de parcelamentos e redefinirá sua renda para R$ 0,00 para você preencher do zero.
+            </p>
+            <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="closeClearConfirmModal()" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition">Cancelar</button>
+                <button type="button" onclick="executeClearAllData()" class="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-xl transition shadow-md shadow-rose-600/20">Sim, Zerar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Estado Global da Aplicação
         let state = {
-            currentDate: new Date(),
+            currentDate: new Date(), // Ano e Mês ativos
             income: 5000.00,
             incomeSource: "Salário Principal",
-            expenses: []
+            expenses: [] // Lista de gastos
         };
 
         let expensePieChartInstance = null;
 
+        // Inicialização ao carregar a página
         window.addEventListener('DOMContentLoaded', () => {
             loadStateFromStorage();
             lucide.createIcons();
@@ -520,6 +476,7 @@
             calculateAndRender();
         });
 
+        // Manipulação de Meses
         function changeMonth(direction) {
             state.currentDate.setMonth(state.currentDate.getMonth() + direction);
             updateMonthDisplay();
@@ -529,6 +486,7 @@
         function updateMonthDisplay() {
             const options = { month: 'long', year: 'numeric' };
             const formatted = state.currentDate.toLocaleDateString('pt-BR', options);
+            // Capitalizar primeiro caractere
             const capitalized = formatted.charAt(0).toUpperCase() + formatted.slice(1);
             document.getElementById('currentMonthDisplay').textContent = capitalized;
         }
@@ -537,6 +495,7 @@
             return `${state.currentDate.getFullYear()}-${String(state.currentDate.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        // Funções de Persistência Local (In-Memory / LocalStorage)
         function saveStateToStorage() {
             try {
                 localStorage.setItem('fluxo_smart_state', JSON.stringify(state));
@@ -554,6 +513,7 @@
                     state.incomeSource = parsed.incomeSource || "Salário Principal";
                     state.expenses = parsed.expenses || [];
                 } else {
+                    // Dados iniciais de demonstração úteis
                     loadDemoData();
                 }
             } catch (e) {
@@ -568,60 +528,39 @@
             const monthKey = `${year}-${month}`;
 
             state.expenses = [
-                { id: '1', monthKey: monthKey, expenseGroup: 'fixa', desc: 'Aluguel Apartamento', amount: 1800.00, category: 'necessidades', owner: 'EU', paymentType: 'recorrente', cardName: '', installmentInfo: 'Recorrente' },
-                { id: '2', monthKey: monthKey, expenseGroup: 'fixa', desc: 'Internet Fibra', amount: 120.00, category: 'necessidades', owner: 'EU', paymentType: 'recorrente', cardName: '', installmentInfo: 'Recorrente' },
-                { id: '3', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Supermercado Mensal', amount: 950.00, category: 'necessidades', owner: 'EU', paymentType: 'pontual', cardName: 'Nubank', installmentInfo: 'À vista' },
-                { id: '4', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Salão da Mãe', amount: 250.00, category: 'desejos', owner: 'Mãe', paymentType: 'pontual', cardName: 'Nubank', installmentInfo: 'Cobrar da Mãe' },
-                { id: '5', monthKey: monthKey, expenseGroup: 'cartao', desc: 'Presente Namorada', amount: 180.00, category: 'desejos', owner: 'Namorada', paymentType: 'pontual', cardName: 'Visa', installmentInfo: 'Cobrar Namorada' }
+                { id: '1', monthKey: monthKey, desc: 'Aluguel Apartamento', amount: 1800.00, category: 'necessidades', paymentType: 'debito', cardName: '', installmentInfo: 'À vista' },
+                { id: '2', monthKey: monthKey, desc: 'Supermercado Mensal', amount: 950.00, category: 'necessidades', paymentType: 'cartao_credito', cardName: 'Nubank', installmentInfo: 'Crédito' },
+                { id: '3', monthKey: monthKey, desc: 'Restaurantes & Lazer', amount: 600.00, category: 'desejos', paymentType: 'cartao_credito', cardName: 'Visa', installmentInfo: 'Crédito' },
+                { id: '4', monthKey: monthKey, desc: 'Reserva de Emergência', amount: 1000.00, category: 'poupanca', paymentType: 'debito', cardName: '', installmentInfo: 'Investimento' }
             ];
             saveStateToStorage();
         }
 
-        // Modais
-        function openAddExpenseModalWithGroup(group) {
+        function confirmClearData() {
+            document.getElementById('clearConfirmModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeClearConfirmModal() {
+            document.getElementById('clearConfirmModal').classList.add('hidden');
+        }
+
+        function executeClearAllData() {
+            state.income = 0.00;
+            state.incomeSource = "Renda a Definir";
+            state.expenses = [];
+            saveStateToStorage();
+            closeClearConfirmModal();
+            calculateAndRender();
+        }
+
+        // Modais Control
+        function openAddExpenseModal() {
             document.getElementById('expenseForm').reset();
-            document.getElementById('editingExpenseId').value = '';
-            document.getElementById('expGroup').value = group;
-            document.getElementById('expOwnerSelect').value = 'EU';
-            document.getElementById('customOwnerContainer').classList.add('hidden');
-            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i><span>Novo Lançamento</span>';
-            document.getElementById('expenseSubmitBtn').textContent = 'Salvar Gasto';
-            toggleGroupFields();
+            document.getElementById('installmentContainer').classList.add('hidden');
             document.getElementById('expenseModal').classList.remove('hidden');
             lucide.createIcons();
         }
-
-        function openEditExpenseModal(id) {
-            const item = state.expenses.find(x => x.id === id);
-            if (!item) return;
-
-            document.getElementById('editingExpenseId').value = item.id;
-            document.getElementById('expGroup').value = item.expenseGroup || 'fixa';
-            
-            const ownerSelect = document.getElementById('expOwnerSelect');
-            if (['EU', 'Mãe', 'Namorada'].includes(item.owner)) {
-                ownerSelect.value = item.owner;
-                document.getElementById('customOwnerContainer').classList.add('hidden');
-            } else {
-                ownerSelect.value = 'Outro';
-                document.getElementById('customOwnerContainer').classList.remove('hidden');
-                document.getElementById('expCustomOwner').value = item.owner;
-            }
-
-            document.getElementById('expDesc').value = item.desc;
-            document.getElementById('expAmount').value = item.amount;
-            document.getElementById('expCategory').value = item.category;
-            document.getElementById('expCardName').value = item.cardName || 'Nubank';
-            document.getElementById('expPaymentType').value = item.paymentType || 'pontual';
-
-            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="edit-3" class="w-5 h-5 text-emerald-600"></i><span>Editar Gasto</span>';
-            document.getElementById('expenseSubmitBtn').textContent = 'Atualizar Gasto';
-
-            toggleGroupFields();
-            document.getElementById('expenseModal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
         function closeAddExpenseModal() {
             document.getElementById('expenseModal').classList.add('hidden');
         }
@@ -644,131 +583,65 @@
             document.getElementById('exportModal').classList.add('hidden');
         }
 
-        function toggleGroupFields() {
-            const group = document.getElementById('expGroup').value;
-            const cardNameCont = document.getElementById('cardNameContainer');
-            if (group === 'cartao') {
-                cardNameCont.classList.remove('hidden');
-            } else {
-                cardNameCont.classList.add('hidden');
-            }
-            togglePaymentTypeFields();
-        }
-
-        function checkCustomOwner() {
-            const val = document.getElementById('expOwnerSelect').value;
-            const customCont = document.getElementById('customOwnerContainer');
-            if (val === 'Outro') {
-                customCont.classList.remove('hidden');
-            } else {
-                customCont.classList.add('hidden');
-            }
-        }
-
-        function togglePaymentTypeFields() {
+        function toggleInstallmentField() {
             const val = document.getElementById('expPaymentType').value;
-            const instCont = document.getElementById('installmentContainer');
-            const recCont = document.getElementById('recurringMonthsContainer');
-
-            instCont.classList.add('hidden');
-            recCont.classList.add('hidden');
-
+            const container = document.getElementById('installmentContainer');
             if (val === 'cartao_parcelado') {
-                instCont.classList.remove('hidden');
-            } else if (val === 'recorrente') {
-                recCont.classList.remove('hidden');
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
             }
         }
 
-        // Submissão do Formulário
+        // Submissão de Novo Gasto (Com Replicação de Parcelas)
         function handleExpenseSubmit(event) {
             event.preventDefault();
-            const editingId = document.getElementById('editingExpenseId').value;
-            const expenseGroup = document.getElementById('expGroup').value;
-            
-            let owner = document.getElementById('expOwnerSelect').value;
-            if (owner === 'Outro') {
-                owner = document.getElementById('expCustomOwner').value.trim() || 'Outro';
-            }
-
             const desc = document.getElementById('expDesc').value;
             const amountTotal = parseFloat(document.getElementById('expAmount').value);
             const category = document.getElementById('expCategory').value;
-            const cardName = expenseGroup === 'cartao' ? (document.getElementById('expCardName').value || 'Nubank') : '';
             const paymentType = document.getElementById('expPaymentType').value;
+            const cardName = document.getElementById('expCardName').value || 'Cartão Principal';
+
             const activeMonthKey = getActiveMonthKey();
 
-            if (editingId) {
-                // Edição
-                const item = state.expenses.find(x => x.id === editingId);
-                if (item) {
-                    item.expenseGroup = expenseGroup;
-                    item.owner = owner;
-                    item.desc = desc;
-                    item.amount = amountTotal;
-                    item.category = category;
-                    item.cardName = cardName;
-                    item.paymentType = paymentType;
+            if (paymentType === 'cartao_parcelado') {
+                const totalInstallments = parseInt(document.getElementById('expInstallments').value) || 2;
+                const installmentValue = parseFloat((amountTotal / totalInstallments).toFixed(2));
+
+                // Gerar parcelas replicadas para os meses seguintes
+                let baseDate = new Date(state.currentDate);
+
+                for (let i = 1; i <= totalInstallments; i++) {
+                    const year = baseDate.getFullYear();
+                    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+                    const mKey = `${year}-${month}`;
+
+                    const newExpense = {
+                        id: 'exp_' + Date.now() + '_' + i,
+                        monthKey: mKey,
+                        desc: `${desc} (${i}/${totalInstallments})`,
+                        amount: installmentValue,
+                        category: category,
+                        paymentType: paymentType,
+                        cardName: cardName,
+                        installmentInfo: `${i}/${totalInstallments} parcelas`
+                    };
+
+                    state.expenses.push(newExpense);
+                    baseDate.setMonth(baseDate.getMonth() + 1);
                 }
             } else {
-                // Criação (com suporte a parcelas ou recorrência)
-                if (paymentType === 'cartao_parcelado') {
-                    const totalInst = parseInt(document.getElementById('expInstallments').value) || 2;
-                    const instVal = parseFloat((amountTotal / totalInst).toFixed(2));
-                    let baseDate = new Date(state.currentDate);
-
-                    for (let i = 1; i <= totalInst; i++) {
-                        const y = baseDate.getFullYear();
-                        const m = String(baseDate.getMonth() + 1).padStart(2, '0');
-                        state.expenses.push({
-                            id: 'exp_' + Date.now() + '_' + i,
-                            monthKey: `${y}-${m}`,
-                            expenseGroup: expenseGroup,
-                            owner: owner,
-                            desc: `${desc} (${i}/${totalInst})`,
-                            amount: instVal,
-                            category: category,
-                            cardName: cardName,
-                            paymentType: paymentType,
-                            installmentInfo: `${i}/${totalInst} parcelas`
-                        });
-                        baseDate.setMonth(baseDate.getMonth() + 1);
-                    }
-                } else if (paymentType === 'recorrente') {
-                    const recMonths = parseInt(document.getElementById('expRecurringMonths').value) || 12;
-                    let baseDate = new Date(state.currentDate);
-
-                    for (let i = 0; i < recMonths; i++) {
-                        const y = baseDate.getFullYear();
-                        const m = String(baseDate.getMonth() + 1).padStart(2, '0');
-                        state.expenses.push({
-                            id: 'exp_rec_' + Date.now() + '_' + i,
-                            monthKey: `${y}-${m}`,
-                            expenseGroup: expenseGroup,
-                            owner: owner,
-                            desc: desc,
-                            amount: amountTotal,
-                            category: category,
-                            cardName: cardName,
-                            paymentType: paymentType,
-                            installmentInfo: 'Recorrente'
-                        });
-                        baseDate.setMonth(baseDate.getMonth() + 1);
-                    }
-                } else {
-                    state.expenses.push({
-                        id: 'exp_' + Date.now(),
-                        monthKey: activeMonthKey,
-                        expenseGroup: expenseGroup,
-                        owner: owner,
-                        desc: desc,
-                        amount: amountTotal,
-                        category: category,
-                        cardName: cardName,
-                        paymentType: paymentType,
-                        installmentInfo: 'À vista'
-                    });
-                }
+                const newExpense = {
+                    id: 'exp_' + Date.now(),
+                    monthKey: activeMonthKey,
+                    desc: desc,
+                    amount: amountTotal,
+                    category: category,
+                    paymentType: paymentType,
+                    cardName: paymentType === 'cartao_credito' ? cardName : '',
+                    installmentInfo: paymentType === 'cartao_credito' ? 'Crédito à vista' : 'Débito / Pix'
+                };
+                state.expenses.push(newExpense);
             }
 
             saveStateToStorage();
@@ -776,6 +649,7 @@
             calculateAndRender();
         }
 
+        // Submissão de Configurações
         function handleSettingsSubmit(event) {
             event.preventDefault();
             state.income = parseFloat(document.getElementById('settingsIncome').value) || 0;
@@ -794,70 +668,62 @@
         // Motor Principal de Cálculo & Renderização
         function calculateAndRender() {
             const activeMonthKey = getActiveMonthKey();
+            
+            // Filtrar gastos do mês ativo
             const currentMonthExpenses = state.expenses.filter(item => item.monthKey === activeMonthKey);
 
-            // Separar o que é EU do que é Terceiros
-            const myExpenses = currentMonthExpenses.filter(item => (item.owner || 'EU').toUpperCase() === 'EU');
-            const thirdPartyExpenses = currentMonthExpenses.filter(item => (item.owner || 'EU').toUpperCase() !== 'EU');
-
-            // 1. Totais do Bloco 1 (Despesas Fixas de EU) e Bloco 2 (Cartões de EU)
-            let totalFixed = 0;
-            let totalCards = 0;
-
-            currentMonthExpenses.forEach(item => {
-                if ((item.owner || 'EU').toUpperCase() === 'EU') {
-                    if (item.expenseGroup === 'fixa') totalFixed += item.amount;
-                    if (item.expenseGroup === 'cartao') totalCards += item.amount;
-                }
-            });
-
-            // 2. Regra 50/30/20 baseada apenas nas despesas de EU
+            // Totais por categoria
             let totalNeeds = 0;
             let totalWants = 0;
             let totalSavingsExp = 0;
 
-            myExpenses.forEach(item => {
+            currentMonthExpenses.forEach(item => {
                 if (item.category === 'necessidades') totalNeeds += item.amount;
                 else if (item.category === 'desejos') totalWants += item.amount;
                 else if (item.category === 'poupanca') totalSavingsExp += item.amount;
             });
 
-            const totalSpentMy = totalNeeds + totalWants + totalSavingsExp;
-            const remainingForSavings = state.income - totalSpentMy;
-            const spentPercentage = state.income > 0 ? (totalSpentMy / state.income) * 100 : 0;
+            const totalSpent = totalNeeds + totalWants + totalSavingsExp;
+            const remainingForSavings = state.income - totalSpent;
+            const spentPercentage = state.income > 0 ? (totalSpent / state.income) * 100 : 0;
             const savingsRate = state.income > 0 ? (Math.max(0, remainingForSavings) / state.income) * 100 : 0;
 
+            // Tetos Ideais Regra 50/30/20
             const idealNeeds = state.income * 0.50;
             const idealWants = state.income * 0.30;
             const idealSavings = state.income * 0.20;
 
-            // Atualizar KPIs
+            // Atualizar KPIs na UI
             document.getElementById('kpiIncome').textContent = formatMoney(state.income);
             document.getElementById('kpiIncomeSource').textContent = state.incomeSource;
-            document.getElementById('kpiSpent').textContent = formatMoney(totalSpentMy);
+            document.getElementById('kpiSpent').textContent = formatMoney(totalSpent);
             document.getElementById('kpiSpentPercentage').textContent = spentPercentage.toFixed(1) + '%';
             
             const kpiSavingsEl = document.getElementById('kpiSavings');
             kpiSavingsEl.textContent = formatMoney(remainingForSavings);
-            kpiSavingsEl.className = remainingForSavings < 0 ? "text-2xl font-bold text-rose-600" : "text-2xl font-bold text-emerald-600";
+            if (remainingForSavings < 0) {
+                kpiSavingsEl.className = "text-2xl font-bold text-rose-600";
+            } else {
+                kpiSavingsEl.className = "text-2xl font-bold text-emerald-600";
+            }
             document.getElementById('kpiSavingsRate').textContent = savingsRate.toFixed(1) + '%';
 
+            // Status 50/30/20 Header Card
             let statusText = "Orçamento Saudável";
             if (totalNeeds > idealNeeds) statusText = "Atenção: Necessidades Acima de 50%";
-            if (totalSpentMy > state.income) statusText = "Alerta: Gastos Pessoais Acima da Renda!";
+            if (totalSpent > state.income) statusText = "Alerta: Gastos Acima da Renda!";
             document.getElementById('kpiRuleStatus').textContent = statusText;
 
-            // Atualizar barras e gráficos
+            // Atualizar Barras de Progresso Regra 50/30/20
             updateProgressBar('Needs', totalNeeds, idealNeeds, 50);
             updateProgressBar('Wants', totalWants, idealWants, 30);
             updateProgressBar('Savings', totalSavingsExp, idealSavings, 20);
 
-            updateAdvisorDiagnostic(totalNeeds, totalWants, totalSavingsExp, idealNeeds, idealWants, idealSavings, state.income, totalSpentMy);
+            // Consultor Financeiro Inteligente (Mensagem Dinâmica)
+            updateAdvisorDiagnostic(totalNeeds, totalWants, totalSavingsExp, idealNeeds, idealWants, idealSavings, state.income, totalSpent);
 
-            // Renderizar Tabelas e Painel de Terceiros
-            renderFixedExpensesTable(currentMonthExpenses.filter(item => item.expenseGroup === 'fixa'));
-            renderCardExpensesTable(currentMonthExpenses.filter(item => item.expenseGroup === 'cartao'));
-            renderThirdPartySection(thirdPartyExpenses);
+            // Renderizar Tabela e Gráfico
+            renderExpensesTable();
             renderPieChart(totalNeeds, totalWants, totalSavingsExp);
         }
 
@@ -885,6 +751,7 @@
         }
 
         function updateAdvisorDiagnostic(needs, wants, savingsExp, idealNeeds, idealWants, idealSavings, income, totalSpent) {
+            const banner = document.getElementById('financialAdvisorBanner');
             const badge = document.getElementById('advisorBadge');
             const msg = document.getElementById('advisorMessage');
 
@@ -896,52 +763,65 @@
             }
 
             if (totalSpent > income) {
-                badge.textContent = "Déficit Pessoal";
+                badge.textContent = "Déficit Orçamentário";
                 badge.className = "px-2 py-0.5 bg-rose-500/20 text-rose-300 text-[10px] font-semibold rounded-full border border-rose-500/30";
-                msg.textContent = `Seus gastos pessoais (${formatMoney(totalSpent)}) ultrapassam sua renda (${formatMoney(income)}).`;
+                msg.textContent = `Atenção financeira! Seus gastos (${formatMoney(totalSpent)}) ultrapassam sua renda (${formatMoney(income)}). Reveja os gastos em Desejos ou ajuste parcelamentos de cartão.`;
+            } else if (needs > idealNeeds) {
+                badge.textContent = "Necessidades Elevadas";
+                badge.className = "px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-semibold rounded-full border border-amber-500/30";
+                msg.textContent = `Seu bloco de Necessidades consome mais de 50% da renda. Tente otimizar contas fixas ou moradia para liberar margem para investimentos.`;
             } else {
-                badge.textContent = "Equilibrado";
+                badge.textContent = "Saudável & Equilibrado";
                 badge.className = "px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30";
-                msg.textContent = `Suas contas pessoais estão em dia com a regra 50/30/20. O painel separa automaticamente o que você precisa cobrar de terceiros.`;
+                msg.textContent = `Parabéns! Suas finanças estão alinhadas com a regra 50/30/20. Sobra líquido para poupança e investimentos com excelente margem de segurança.`;
             }
         }
 
-        // Renderizar Bloco 1: Despesas Fixas
-        function renderFixedExpensesTable(fixedList) {
-            const tbody = document.getElementById('fixedExpensesTableBody');
-            const emptyDiv = document.getElementById('emptyFixedExpenses');
-            const totalEl = document.getElementById('totalFixedExpenses');
+        // Renderização da Tabela de Gastos
+        function renderExpensesTable() {
+            const activeMonthKey = getActiveMonthKey();
+            const filterCat = document.getElementById('filterCategory').value;
+            
+            let filtered = state.expenses.filter(item => item.monthKey === activeMonthKey);
+            if (filterCat !== 'all') {
+                filtered = filtered.filter(item => item.category === filterCat);
+            }
+
+            const tbody = document.getElementById('expensesTableBody');
+            const emptyDiv = document.getElementById('emptyExpenses');
             tbody.innerHTML = '';
 
-            let total = 0;
-            fixedList.forEach(item => {
-                if ((item.owner || 'EU').toUpperCase() === 'EU') total += item.amount;
-            });
-            totalEl.textContent = formatMoney(total);
-
-            if (fixedList.length === 0) {
+            if (filtered.length === 0) {
                 emptyDiv.classList.remove('hidden');
                 return;
+            } else {
+                emptyDiv.classList.add('hidden');
             }
-            emptyDiv.classList.add('hidden');
 
-            fixedList.forEach(item => {
+            filtered.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
+                tr.className = "hover:bg-slate-50/80 transition";
 
-                let ownerBadge = item.owner === 'EU' ? 
-                    '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded text-[10px]">EU</span>' :
-                    `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 font-bold rounded text-[10px]">${escapeHtml(item.owner)}</span>`;
+                let catBadge = '';
+                if (item.category === 'necessidades') catBadge = '<span class="px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-md border border-blue-200 text-[10px]">Necessidades (50%)</span>';
+                else if (item.category === 'desejos') catBadge = '<span class="px-2 py-0.5 bg-purple-50 text-purple-700 font-medium rounded-md border border-purple-200 text-[10px]">Desejos (30%)</span>';
+                else catBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-medium rounded-md border border-emerald-200 text-[10px]">Poupança (20%)</span>';
+
+                let paymentBadge = '';
+                if (item.paymentType === 'debito') paymentBadge = '<span class="text-slate-600 font-medium">Débito / Pix</span>';
+                else if (item.paymentType === 'cartao_credito') paymentBadge = `<span class="text-slate-700 font-medium">Crédito (${item.cardName})</span>`;
+                else paymentBadge = `<span class="text-indigo-700 font-medium">Parcelado (${item.cardName})</span>`;
 
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.desc)}</td>
-                    <td class="py-3 px-4 text-slate-600 capitalize">${item.category}</td>
-                    <td class="py-3 px-4">${ownerBadge}</td>
-                    <td class="py-3 px-4 text-slate-500">${escapeHtml(item.installmentInfo || '-')}</td>
-                    <td class="py-3 px-4 font-bold text-slate-900">${formatMoney(item.amount)}</td>
-                    <td class="py-3 px-4 text-right space-x-1">
-                        <button onclick="openEditExpenseModal('${item.id}')" class="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        <button onclick="deleteExpense('${item.id}')" class="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(item.desc)}</td>
+                    <td class="py-3.5 px-4">${catBadge}</td>
+                    <td class="py-3.5 px-4">${paymentBadge}</td>
+                    <td class="py-3.5 px-4 text-slate-500">${escapeHtml(item.installmentInfo)}</td>
+                    <td class="py-3.5 px-4 font-bold text-slate-900">${formatMoney(item.amount)}</td>
+                    <td class="py-3.5 px-4 text-right">
+                        <button onclick="deleteExpense('${item.id}')" class="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition" title="Excluir Gasto">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -949,96 +829,7 @@
             lucide.createIcons();
         }
 
-        // Renderizar Bloco 2: Cartões de Crédito
-        function renderCardExpensesTable(cardList) {
-            const tbody = document.getElementById('cardExpensesTableBody');
-            const emptyDiv = document.getElementById('emptyCardExpenses');
-            const totalEl = document.getElementById('totalCardExpenses');
-            tbody.innerHTML = '';
-
-            let total = 0;
-            cardList.forEach(item => {
-                if ((item.owner || 'EU').toUpperCase() === 'EU') total += item.amount;
-            });
-            totalEl.textContent = formatMoney(total);
-
-            if (cardList.length === 0) {
-                emptyDiv.classList.remove('hidden');
-                return;
-            }
-            emptyDiv.classList.add('hidden');
-
-            cardList.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-
-                let ownerBadge = item.owner === 'EU' ? 
-                    '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded text-[10px]">EU</span>' :
-                    `<span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-[10px] border border-amber-300">Cobrar: ${escapeHtml(item.owner)}</span>`;
-
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.desc)}</td>
-                    <td class="py-3 px-4"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-semibold rounded text-[10px]">${escapeHtml(item.cardName || 'Nubank')}</span></td>
-                    <td class="py-3 px-4 text-slate-600 capitalize">${item.category}</td>
-                    <td class="py-3 px-4">${ownerBadge}</td>
-                    <td class="py-3 px-4 text-slate-500">${escapeHtml(item.installmentInfo || 'À vista')}</td>
-                    <td class="py-3 px-4 font-bold text-slate-900">${formatMoney(item.amount)}</td>
-                    <td class="py-3 px-4 text-right space-x-1">
-                        <button onclick="openEditExpenseModal('${item.id}')" class="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded transition"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        <button onclick="deleteExpense('${item.id}')" class="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            lucide.createIcons();
-        }
-
-        // Renderizar Painel de Cobrança de Terceiros
-        function renderThirdPartySection(thirdPartyList) {
-            const section = document.getElementById('thirdPartySection');
-            const container = document.getElementById('thirdPartyCardsContainer');
-            container.innerHTML = '';
-
-            if (thirdPartyList.length === 0) {
-                section.classList.add('hidden');
-                return;
-            }
-            section.classList.remove('hidden');
-
-            // Agrupar por responsável
-            const grouped = {};
-            thirdPartyList.forEach(item => {
-                const owner = item.owner || 'Outro';
-                if (!grouped[owner]) grouped[owner] = { total: 0, items: [] };
-                grouped[owner].total += item.amount;
-                grouped[owner].items.push(item);
-            });
-
-            Object.keys(grouped).forEach(owner => {
-                const data = grouped[owner];
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-xl border border-amber-200 shadow-2xs space-y-2";
-                
-                let itemsHtml = data.items.map(i => `<div class="flex justify-between text-[11px] text-slate-600 border-b border-slate-100 pb-1"><span>${escapeHtml(i.desc)}</span><strong>${formatMoney(i.amount)}</strong></div>`).join('');
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-900 flex items-center space-x-1.5">
-                            <i data-lucide="user" class="w-4 h-4 text-amber-600"></i>
-                            <span>${escapeHtml(owner)}</span>
-                        </span>
-                        <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">${formatMoney(data.total)}</span>
-                    </div>
-                    <div class="space-y-1 pt-1 max-h-28 overflow-y-auto custom-scrollbar">
-                        ${itemsHtml}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        // Gráfico de Pizza
+        // Gráfico de Pizza com Chart.js
         function renderPieChart(needs, wants, savings) {
             const ctx = document.getElementById('expensePieChart').getContext('2d');
             const legendContainer = document.getElementById('pieChartLegend');
@@ -1050,6 +841,7 @@
                 expensePieChartInstance.destroy();
             }
 
+            // Legenda personalizada
             legendContainer.innerHTML = `
                 <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span><span class="truncate">Necessidades: <strong>${formatMoney(needs)}</strong></span></div>
                 <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span><span class="truncate">Desejos: <strong>${formatMoney(wants)}</strong></span></div>
@@ -1086,19 +878,19 @@
             });
         }
 
-        // Relatório
+        // Geração de Relatório para Cópia
         function generateReportText() {
             const activeMonthKey = getActiveMonthKey();
             const currentMonthExpenses = state.expenses.filter(item => item.monthKey === activeMonthKey);
-            const myExpenses = currentMonthExpenses.filter(item => (item.owner || 'EU').toUpperCase() === 'EU');
             
-            let totalFixed = 0, totalCards = 0;
-            myExpenses.forEach(i => {
-                if (i.expenseGroup === 'fixa') totalFixed += i.amount;
-                if (i.expenseGroup === 'cartao') totalCards += i.amount;
+            let totalNeeds = 0, totalWants = 0, totalSavings = 0;
+            currentMonthExpenses.forEach(item => {
+                if (item.category === 'necessidades') totalNeeds += item.amount;
+                else if (item.category === 'desejos') totalWants += item.amount;
+                else if (item.category === 'poupanca') totalSavings += item.amount;
             });
-            const totalMy = totalFixed + totalCards;
-            const remaining = state.income - totalMy;
+            const totalSpent = totalNeeds + totalWants + totalSavings;
+            const remaining = state.income - totalSpent;
 
             const options = { month: 'long', year: 'numeric' };
             const monthName = state.currentDate.toLocaleDateString('pt-BR', options);
@@ -1107,11 +899,13 @@
             text += `Período: ${monthName.toUpperCase()}\n`;
             text += `Renda Líquida: ${formatMoney(state.income)} (${state.incomeSource})\n`;
             text += `----------------------------------------\n`;
-            text += `MEUS GASTOS (EU):\n`;
-            text += `• Despesas Fixas: ${formatMoney(totalFixed)}\n`;
-            text += `• Cartões de Crédito: ${formatMoney(totalCards)}\n`;
-            text += `Total Gasto Pessoal: ${formatMoney(totalMy)}\n`;
-            text += `Sobra p/ Poupança: ${formatMoney(remaining)}\n`;
+            text += `RESUMO DE GASTOS:\n`;
+            text += `• Necessidades (50%): ${formatMoney(totalNeeds)} (Teto ideal: ${formatMoney(state.income * 0.5)})\n`;
+            text += `• Desejos (30%): ${formatMoney(totalWants)} (Teto ideal: ${formatMoney(state.income * 0.3)})\n`;
+            text += `• Poupança/Invest (20%): ${formatMoney(totalSavings)} (Meta ideal: ${formatMoney(state.income * 0.2)})\n`;
+            text += `----------------------------------------\n`;
+            text += `Total Gastos: ${formatMoney(totalSpent)}\n`;
+            text += `Sobra Líquida p/ Poupança: ${formatMoney(remaining)}\n`;
             text += `========================================\n`;
             text += `Gerado por FluxoSmart Consultoria Pessoal`;
 
@@ -1123,17 +917,24 @@
             textarea.select();
             try {
                 document.execCommand('copy');
+                alertCustom("Relatório copiado com sucesso para a área de transferência!");
             } catch (e) {
                 console.error("Erro ao copiar", e);
             }
         }
 
+        // Utilitários
         function formatMoney(val) {
             return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
         function escapeHtml(str) {
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function alertCustom(msg) {
+            // Notificação leve no rodapé ou console caso necessário
+            console.log(msg);
         }
     </script>
 </body>

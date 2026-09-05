@@ -56,6 +56,13 @@
                         <i data-lucide="chevron-right" class="w-4 h-4"></i>
                     </button>
                 </div>
+                <button onclick="copySyncKey()" title="Copie esta chave para acessar seus dados em outro dispositivo" class="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-xs font-medium transition border border-sky-200 shadow-xs">
+                    <i data-lucide="cloud" class="w-4 h-4"></i>
+                    <span id="syncKeyDisplay">...</span>
+                </button>
+                <button onclick="changeSyncKey()" title="Usar uma chave de outro dispositivo" class="hidden sm:flex items-center px-2 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-medium transition border border-slate-200 shadow-xs">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
                 <button onclick="openSettingsModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition border border-emerald-200 shadow-xs">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                     <span>Renda</span>
@@ -579,6 +586,53 @@
         </div>
     </div>
 
+    <!-- ===================== FIREBASE (Firestore) ===================== -->
+    <!-- 1) Crie um projeto em https://console.firebase.google.com                     -->
+    <!-- 2) Ative o Firestore Database (modo de produção ou teste)                     -->
+    <!-- 3) Em "Configurações do projeto > Geral", copie o firebaseConfig e cole abaixo -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import {
+            getFirestore, doc, getDoc, setDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBG6rrFEwFsTZaCoyF_NY-5iTWTeHU_elY",
+            authDomain: "domestic-budget-27ab7.firebaseapp.com",
+            projectId: "domestic-budget-27ab7",
+            storageBucket: "domestic-budget-27ab7.firebasestorage.app",
+            messagingSenderId: "1088429515047",
+            appId: "1:1088429515047:web:c7738d23ea9c615b4e0902"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Salva o estado no documento da chave de sincronização informada
+        window.fbSaveState = async function (syncKey, stateObj) {
+            try {
+                await setDoc(doc(db, "paineis", syncKey), stateObj);
+                return true;
+            } catch (e) {
+                console.error("Erro ao salvar no Firestore:", e);
+                return false;
+            }
+        };
+
+        // Carrega o estado salvo para essa chave (ou null se não existir ainda)
+        window.fbLoadState = async function (syncKey) {
+            try {
+                const snap = await getDoc(doc(db, "paineis", syncKey));
+                return snap.exists() ? snap.data() : null;
+            } catch (e) {
+                console.error("Erro ao carregar do Firestore:", e);
+                return null;
+            }
+        };
+
+        window.__firebaseReady = true;
+    </script>
+
     <script>
         let state = {
             currentDate: new Date(),
@@ -589,12 +643,56 @@
 
         let expensePieChartInstance = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadStateFromStorage();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadStateFromStorage();
             lucide.createIcons();
             updateMonthDisplay();
             calculateAndRender();
+            renderSyncKeyBadge();
         });
+
+        // ===================== Sincronização (chave pessoal) =====================
+        function getSyncKey() {
+            return localStorage.getItem('fluxo_smart_sync_key');
+        }
+
+        function setSyncKey(key) {
+            localStorage.setItem('fluxo_smart_sync_key', key);
+        }
+
+        function generateSyncKey() {
+            return 'fs-' + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
+        }
+
+        // Garante que existe uma chave; se não existir, gera uma nova automaticamente
+        function ensureSyncKey() {
+            let key = getSyncKey();
+            if (!key) {
+                key = generateSyncKey();
+                setSyncKey(key);
+            }
+            return key;
+        }
+
+        function renderSyncKeyBadge() {
+            const el = document.getElementById('syncKeyDisplay');
+            if (el) el.textContent = getSyncKey();
+        }
+
+        function copySyncKey() {
+            const key = getSyncKey();
+            navigator.clipboard.writeText(key).then(() => {
+                alert('Chave copiada: ' + key + '\n\nGuarde essa chave. Use-a em outro navegador/celular para acessar os mesmos dados.');
+            });
+        }
+
+        function changeSyncKey() {
+            const input = prompt('Digite a chave de sincronização que você já usava em outro dispositivo (ou deixe em branco para cancelar):');
+            if (input && input.trim()) {
+                setSyncKey(input.trim());
+                location.reload();
+            }
+        }
 
         function changeMonth(direction) {
             state.currentDate.setMonth(state.currentDate.getMonth() + direction);
@@ -614,14 +712,45 @@
         }
 
         function saveStateToStorage() {
+            // Cache local imediato (funciona offline e como fallback)
             try {
                 localStorage.setItem('fluxo_smart_state', JSON.stringify(state));
             } catch (e) {
-                console.error("Erro ao salvar dados", e);
+                console.error("Erro ao salvar dados localmente", e);
+            }
+
+            // Envia para o Firestore em segundo plano (não trava a interface)
+            const key = ensureSyncKey();
+            const payload = {
+                income: state.income,
+                incomeSource: state.incomeSource,
+                expenses: state.expenses
+            };
+            if (window.fbSaveState) {
+                window.fbSaveState(key, payload);
             }
         }
 
-        function loadStateFromStorage() {
+        async function loadStateFromStorage() {
+            const key = ensureSyncKey();
+
+            // 1) Tenta buscar do Firestore primeiro (dados "oficiais")
+            try {
+                if (window.fbLoadState) {
+                    const remote = await window.fbLoadState(key);
+                    if (remote) {
+                        state.income = remote.income || 5000.00;
+                        state.incomeSource = remote.incomeSource || "Salário Principal";
+                        state.expenses = remote.expenses || [];
+                        localStorage.setItem('fluxo_smart_state', JSON.stringify(remote));
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error("Erro ao carregar do Firestore, tentando cache local", e);
+            }
+
+            // 2) Se não achou nada no Firestore, tenta o cache local
             try {
                 const saved = localStorage.getItem('fluxo_smart_state');
                 if (saved) {
@@ -629,6 +758,7 @@
                     state.income = parsed.income || 5000.00;
                     state.incomeSource = parsed.incomeSource || "Salário Principal";
                     state.expenses = parsed.expenses || [];
+                    saveStateToStorage(); // envia o cache local para o Firestore
                 } else {
                     loadDemoData();
                 }

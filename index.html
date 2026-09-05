@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro 50/30/20 Interativo</title>
+    <title>Controle Financeiro</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js para gráficos dinâmicos -->
@@ -32,16 +32,16 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased selection:bg-fuchsia-500 selection:text-white">
 
     <!-- ===================== TELA DE LOGIN / CADASTRO ===================== -->
     <div id="authScreen" class="flex-1 flex items-center justify-center px-4">
         <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg border border-slate-200 p-6 sm:p-8">
             <div class="flex flex-col items-center mb-6">
-                <div class="h-12 w-12 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 mb-3">
+                <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-600/20 mb-3">
                     <i data-lucide="wallet" class="w-6 h-6"></i>
                 </div>
-                <h1 class="text-lg font-bold text-slate-900">FluxoSmart 50/30/20</h1>
+                <h1 class="text-lg font-bold text-slate-900">Controle Financeiro</h1>
                 <p id="authSubtitle" class="text-xs text-slate-500 mt-1">Entre na sua conta</p>
             </div>
 
@@ -50,17 +50,18 @@
             <form id="authForm" class="space-y-3">
                 <div>
                     <label class="text-xs font-medium text-slate-600 block mb-1">E-mail</label>
-                    <input id="authEmail" type="email" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" placeholder="voce@email.com">
+                    <input id="authEmail" type="email" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 outline-none" placeholder="voce@email.com">
                 </div>
                 <div>
                     <label class="text-xs font-medium text-slate-600 block mb-1">Senha</label>
-                    <input id="authPassword" type="password" required minlength="6" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" placeholder="Mínimo 6 caracteres">
+                    <input id="authPassword" type="password" required minlength="6" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 outline-none" placeholder="Mínimo 6 caracteres">
+                    <p id="passwordHint" class="hidden text-[11px] text-slate-500 mt-1">A senha deve ter no mínimo 6 caracteres e 1 caractere especial (ex: ! @ # $ % &).</p>
                 </div>
-                <button type="submit" id="authSubmitBtn" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl text-sm shadow-md shadow-emerald-600/20 transition">Entrar</button>
+                <button type="submit" id="authSubmitBtn" class="w-full px-4 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium rounded-xl text-sm shadow-md shadow-fuchsia-600/20 transition">Entrar</button>
             </form>
 
             <div class="mt-4 flex flex-col items-center space-y-2">
-                <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-emerald-700 hover:underline font-medium">Não tem conta? Criar conta</button>
+                <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-fuchsia-700 hover:underline font-medium">Não tem conta? Criar conta</button>
                 <button type="button" onclick="handleForgotPassword()" class="text-xs text-slate-500 hover:underline">Esqueci minha senha</button>
             </div>
         </div>
@@ -71,11 +72,11 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-600/20">
                     <i data-lucide="wallet" class="w-5 h-5"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-slate-900 tracking-tight">FluxoSmart 50/30/20</h1>
+                    <h1 class="text-lg font-bold text-slate-900 tracking-tight">Controle Financeiro</h1>
                     <p class="text-xs text-slate-500">Consultoria Financeira Pessoal & Divisão de Contas</p>
                 </div>
             </div>
@@ -97,7 +98,7 @@
                 <button onclick="handleLogout()" title="Sair da conta" class="hidden sm:flex items-center px-2 py-2 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg text-xs font-medium transition border border-slate-200 shadow-xs">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
-                <button onclick="openSettingsModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition border border-emerald-200 shadow-xs">
+                <button onclick="openSettingsModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-2 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 rounded-lg text-xs font-medium transition border border-fuchsia-200 shadow-xs">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                     <span>Renda</span>
                 </button>
@@ -116,22 +117,22 @@
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 overflow-y-auto custom-scrollbar">
 
         <!-- Alertas de Consultor Financeiro Inteligente -->
-        <div id="financialAdvisorBanner" class="bg-gradient-to-r from-emerald-900 to-slate-900 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div id="financialAdvisorBanner" class="bg-gradient-to-r from-fuchsia-900 to-slate-900 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none"></div>
             <div class="flex items-start space-x-4 z-10">
-                <div class="p-3 bg-white/10 rounded-xl backdrop-blur-md text-emerald-400 mt-0.5 md:mt-0">
+                <div class="p-3 bg-white/10 rounded-xl backdrop-blur-md text-fuchsia-400 mt-0.5 md:mt-0">
                     <i data-lucide="sparkles" class="w-6 h-6"></i>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
                         <h2 class="font-semibold text-white text-sm sm:text-base">Diagnóstico do Consultor Virtual</h2>
-                        <span id="advisorBadge" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30">Equilibrado</span>
+                        <span id="advisorBadge" class="px-2 py-0.5 bg-fuchsia-500/20 text-fuchsia-300 text-[10px] font-semibold rounded-full border border-fuchsia-500/30">Equilibrado</span>
                     </div>
                     <p id="advisorMessage" class="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">Carregando análise financeira personalizada...</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2 z-10 w-full md:w-auto justify-end">
-                <button onclick="openAddExpenseModal()" class="w-full md:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl text-xs transition shadow-md shadow-emerald-500/20 flex items-center justify-center space-x-1.5">
+                <button onclick="openAddExpenseModal()" class="w-full md:w-auto px-4 py-2 bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-medium rounded-xl text-xs transition shadow-md shadow-fuchsia-500/20 flex items-center justify-center space-x-1.5">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Novo Gasto / Fixa / Cartão</span>
                 </button>
@@ -172,12 +173,12 @@
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div class="flex items-center justify-between text-slate-500">
                     <span class="text-xs font-medium uppercase tracking-wider">Sobra p/ Poupança & Investir</span>
-                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
+                    <div class="p-2 bg-fuchsia-50 text-fuchsia-600 rounded-xl"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
                 </div>
                 <div class="mt-4">
-                    <h3 id="kpiSavings" class="text-2xl font-bold text-emerald-600">R$ 0,00</h3>
+                    <h3 id="kpiSavings" class="text-2xl font-bold text-fuchsia-600">R$ 0,00</h3>
                     <p class="text-xs text-slate-500 mt-1 flex items-center space-x-1">
-                        <span id="kpiSavingsRate" class="font-medium text-emerald-600">0%</span> taxa de economia
+                        <span id="kpiSavingsRate" class="font-medium text-fuchsia-600">0%</span> taxa de economia
                     </p>
                 </div>
             </div>
@@ -263,13 +264,13 @@
                     <div>
                         <div class="flex justify-between items-center text-xs mb-1.5 font-medium">
                             <span class="text-slate-700 flex items-center space-x-1.5">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-fuchsia-600 inline-block"></span>
                                 <span>Poupança, Investimentos & Dívidas - Meta 20%</span>
                             </span>
                             <span id="labelSavings" class="text-slate-900 font-semibold">R$ 0,00 / R$ 0,00</span>
                         </div>
                         <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                            <div id="barSavings" class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            <div id="barSavings" class="bg-fuchsia-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
                         </div>
                         <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1">
                             <span id="statusSavings">Ideal: Mínimo 20% guardado</span>
@@ -408,7 +409,7 @@
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 id="expenseModalTitle" class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                    <i data-lucide="credit-card" class="w-5 h-5 text-emerald-600"></i>
+                    <i data-lucide="credit-card" class="w-5 h-5 text-fuchsia-600"></i>
                     <span>Lançamento de Gasto</span>
                 </h3>
                 <button onclick="closeAddExpenseModal()" class="text-slate-400 hover:text-slate-600 p-1">
@@ -422,14 +423,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Bloco de Despesa</label>
-                        <select id="expGroup" onchange="toggleGroupFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <select id="expGroup" onchange="toggleGroupFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                             <option value="fixa">Despesa Fixa / Recorrente</option>
                             <option value="cartao">Cartão de Crédito</option>
                         </select>
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Responsável Principal</label>
-                        <select id="expOwnerSelect" onchange="checkCustomOwner()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <select id="expOwnerSelect" onchange="checkCustomOwner()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                             <option value="EU">EU (Minhas Contas)</option>
                             <option value="Outro">Outra Pessoa (Para Cobrança / Reembolso)</option>
                         </select>
@@ -439,7 +440,7 @@
                 <!-- Input customizado de Nome da Outra Pessoa -->
                 <div id="customOwnerContainer" class="hidden">
                     <label class="block font-semibold text-slate-700 mb-1">Nome de quem vai pagar / reembolsar (Ex: Mãe, Namorada, João...)</label>
-                    <input type="text" id="expCustomOwner" placeholder="Digite o nome da pessoa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <input type="text" id="expCustomOwner" placeholder="Digite o nome da pessoa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                 </div>
 
                 <!-- Opção de Divisão Automática com Campo Aberto -->
@@ -468,7 +469,7 @@
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Descrição / Estabelecimento</label>
-                    <input type="text" id="expDesc" required placeholder="Ex: Aluguel, Supermercado, Salão..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <input type="text" id="expDesc" required placeholder="Ex: Aluguel, Supermercado, Salão..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -476,12 +477,12 @@
                         <label class="block font-semibold text-slate-700 mb-1">Valor Total (ou Parcela) (R$)</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
-                            <input type="number" step="0.01" id="expAmount" required placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                            <input type="number" step="0.01" id="expAmount" required placeholder="0,00" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                         </div>
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Regra 50/30/20 (Destino)</label>
-                        <select id="expCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <select id="expCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                             <option value="necessidades">Necessidades (50% - Essencial)</option>
                             <option value="desejos">Desejos (30% - Estilo de Vida)</option>
                             <option value="poupanca">Poupança / Investimentos (20%)</option>
@@ -492,13 +493,13 @@
                 <!-- Campo Nome do Cartão (Aparece se for Cartão) -->
                 <div id="cardNameContainer" class="hidden">
                     <label class="block font-semibold text-slate-700 mb-1">Nome do Cartão de Crédito</label>
-                    <input type="text" id="expCardName" placeholder="Ex: Nubank, Visa Infinite, Mastercard" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium" value="Nubank">
+                    <input type="text" id="expCardName" placeholder="Ex: Nubank, Visa Infinite, Mastercard" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium" value="Nubank">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Tipo de Pagamento / Recorrência</label>
-                        <select id="expPaymentType" onchange="togglePaymentTypeFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <select id="expPaymentType" onchange="togglePaymentTypeFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                             <option value="pontual">Pontual / À vista</option>
                             <option value="recorrente">Recorrente (Mensal contínuo)</option>
                             <option value="cartao_parcelado">Cartão Parcelado</option>
@@ -506,7 +507,7 @@
                     </div>
                     <div id="recurringMonthsContainer" class="hidden">
                         <label class="block font-semibold text-slate-700 mb-1">Estender para quantos meses?</label>
-                        <input type="number" id="expRecurringMonths" min="2" max="24" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <input type="number" id="expRecurringMonths" min="2" max="24" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                     </div>
                 </div>
 
@@ -519,7 +520,7 @@
 
                 <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeAddExpenseModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Cancelar</button>
-                    <button type="submit" id="expenseSubmitBtn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Gasto</button>
+                    <button type="submit" id="expenseSubmitBtn" class="px-5 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium rounded-xl shadow-md shadow-fuchsia-600/20 transition">Salvar Gasto</button>
                 </div>
             </form>
         </div>
@@ -530,7 +531,7 @@
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                    <i data-lucide="wallet-cards" class="w-5 h-5 text-emerald-600"></i>
+                    <i data-lucide="wallet-cards" class="w-5 h-5 text-fuchsia-600"></i>
                     <span>Configurar Renda e Orçamento</span>
                 </h3>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1">
@@ -543,18 +544,18 @@
                     <label class="block font-semibold text-slate-700 mb-1">Renda Líquida Mensal (R$)</label>
                     <div class="relative">
                         <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
-                        <input type="number" step="0.01" id="settingsIncome" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                        <input type="number" step="0.01" id="settingsIncome" required class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Origem da Renda / Descrição</label>
-                    <input type="text" id="settingsSource" placeholder="Ex: Salário Principal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-emerald-500 font-medium">
+                    <input type="text" id="settingsSource" placeholder="Ex: Salário Principal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeSettingsModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">Cancelar</button>
-                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md shadow-emerald-600/20 transition">Salvar Configurações</button>
+                    <button type="submit" class="px-5 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium rounded-xl shadow-md shadow-fuchsia-600/20 transition">Salvar Configurações</button>
                 </div>
             </form>
         </div>
@@ -723,6 +724,7 @@
             document.getElementById('authSubtitle').textContent = isSignUpMode ? 'Crie sua conta' : 'Entre na sua conta';
             document.getElementById('authSubmitBtn').textContent = isSignUpMode ? 'Criar conta' : 'Entrar';
             document.getElementById('authToggleBtn').textContent = isSignUpMode ? 'Já tem conta? Entrar' : 'Não tem conta? Criar conta';
+            document.getElementById('passwordHint').classList.toggle('hidden', !isSignUpMode);
             document.getElementById('authError').classList.add('hidden');
         }
 
@@ -736,7 +738,7 @@
             const map = {
                 'auth/email-already-in-use': 'Esse e-mail já está cadastrado. Tente entrar em vez de criar conta.',
                 'auth/invalid-email': 'E-mail inválido.',
-                'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+                'auth/weak-password': 'A senha precisa ter no mínimo 6 caracteres e 1 caractere especial.',
                 'auth/invalid-credential': 'E-mail ou senha incorretos.',
                 'auth/wrong-password': 'E-mail ou senha incorretos.',
                 'auth/user-not-found': 'Não existe conta com esse e-mail.',
@@ -745,12 +747,24 @@
             return map[code] || 'Ocorreu um erro. Tente novamente.';
         }
 
+        function isPasswordValid(password) {
+            const hasMinLength = password.length >= 6;
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>_\-+=[\]/\\;'~`]/.test(password);
+            return hasMinLength && hasSpecialChar;
+        }
+
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
             const btn = document.getElementById('authSubmitBtn');
             document.getElementById('authError').classList.add('hidden');
+
+            if (isSignUpMode && !isPasswordValid(password)) {
+                showAuthError('A senha precisa ter no mínimo 6 caracteres e conter pelo menos 1 caractere especial (ex: ! @ # $ % &).');
+                return;
+            }
+
             btn.disabled = true;
             btn.textContent = 'Aguarde...';
 
@@ -887,7 +901,7 @@
             document.getElementById('customOwnerContainer').classList.add('hidden');
             document.getElementById('expSplitToggle').checked = false;
             document.getElementById('splitDetailsContainer').classList.add('hidden');
-            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i><span>Novo Lançamento</span>';
+            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-fuchsia-600"></i><span>Novo Lançamento</span>';
             document.getElementById('expenseSubmitBtn').textContent = 'Salvar Gasto';
             toggleGroupFields();
             document.getElementById('expenseModal').classList.remove('hidden');
@@ -920,7 +934,7 @@
             document.getElementById('expCardName').value = item.cardName || 'Nubank';
             document.getElementById('expPaymentType').value = item.paymentType || 'pontual';
 
-            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="edit-3" class="w-5 h-5 text-emerald-600"></i><span>Editar Gasto</span>';
+            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="edit-3" class="w-5 h-5 text-fuchsia-600"></i><span>Editar Gasto</span>';
             document.getElementById('expenseSubmitBtn').textContent = 'Atualizar Gasto';
 
             toggleGroupFields();
@@ -1212,7 +1226,7 @@
             
             const kpiSavingsEl = document.getElementById('kpiSavings');
             kpiSavingsEl.textContent = formatMoney(remainingForSavings);
-            kpiSavingsEl.className = remainingForSavings < 0 ? "text-2xl font-bold text-rose-600" : "text-2xl font-bold text-emerald-600";
+            kpiSavingsEl.className = remainingForSavings < 0 ? "text-2xl font-bold text-rose-600" : "text-2xl font-bold text-fuchsia-600";
             document.getElementById('kpiSavingsRate').textContent = savingsRate.toFixed(1) + '%';
 
             let statusText = "Orçamento Saudável";
@@ -1250,7 +1264,7 @@
                 bar.className = actual > ideal ? "bg-rose-600 h-3 rounded-full transition-all duration-500" : "bg-purple-600 h-3 rounded-full transition-all duration-500";
                 status.textContent = actual > ideal ? `Acima do teto de ${targetPct}%` : `Ideal: Até ${targetPct}%`;
             } else if (type === 'Savings') {
-                bar.className = actual < ideal ? "bg-amber-500 h-3 rounded-full transition-all duration-500" : "bg-emerald-600 h-3 rounded-full transition-all duration-500";
+                bar.className = actual < ideal ? "bg-amber-500 h-3 rounded-full transition-all duration-500" : "bg-fuchsia-600 h-3 rounded-full transition-all duration-500";
                 status.textContent = actual < ideal ? `Abaixo da meta de ${targetPct}%` : `Meta de ${targetPct}% atingida!`;
             }
         }
@@ -1272,7 +1286,7 @@
                 msg.textContent = `Seus gastos pessoais (${formatMoney(totalSpent)}) ultrapassam sua renda (${formatMoney(income)}).`;
             } else {
                 badge.textContent = "Equilibrado";
-                badge.className = "px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold rounded-full border border-emerald-500/30";
+                badge.className = "px-2 py-0.5 bg-fuchsia-500/20 text-fuchsia-300 text-[10px] font-semibold rounded-full border border-fuchsia-500/30";
                 msg.textContent = `Suas contas pessoais estão em dia com a regra 50/30/20. O painel separa automaticamente o que você precisa cobrar de terceiros.`;
             }
         }
@@ -1301,7 +1315,7 @@
                 tr.className = "hover:bg-slate-50 transition";
 
                 let ownerBadge = item.owner === 'EU' ? 
-                    '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded text-[10px]">EU</span>' :
+                    '<span class="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-700 font-bold rounded text-[10px]">EU</span>' :
                     `<span class="px-2 py-0.5 bg-amber-50 text-amber-700 font-bold rounded text-[10px]">${escapeHtml(item.owner)}</span>`;
 
                 tr.innerHTML = `
@@ -1369,7 +1383,7 @@
                 tr.className = "hover:bg-slate-50 transition";
 
                 let ownerBadge = item.owner === 'EU' ? 
-                    '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded text-[10px]">EU</span>' :
+                    '<span class="px-2 py-0.5 bg-fuchsia-50 text-fuchsia-700 font-bold rounded text-[10px]">EU</span>' :
                     `<span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-[10px] border border-amber-300">Cobrar: ${escapeHtml(item.owner)}</span>`;
 
                 tr.innerHTML = `
@@ -1448,7 +1462,7 @@
             legendContainer.innerHTML = `
                 <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span><span class="truncate">Necessidades: <strong>${formatMoney(needs)}</strong></span></div>
                 <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span><span class="truncate">Desejos: <strong>${formatMoney(wants)}</strong></span></div>
-                <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span><span class="truncate">Poupança: <strong>${formatMoney(savings)}</strong></span></div>
+                <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-fuchsia-600"></span><span class="truncate">Poupança: <strong>${formatMoney(savings)}</strong></span></div>
             `;
 
             expensePieChartInstance = new Chart(ctx, {
@@ -1457,7 +1471,7 @@
                     labels: ['Necessidades', 'Desejos', 'Poupança/Invest'],
                     datasets: [{
                         data: hasData ? dataValues : [1, 1, 1],
-                        backgroundColor: hasData ? ['#2563eb', '#9333ea', '#059669'] : ['#e2e8f0', '#cbd5e1', '#94a3b8'],
+                        backgroundColor: hasData ? ['#2563eb', '#9333ea', '#c026d3'] : ['#e2e8f0', '#cbd5e1', '#94a3b8'],
                         borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
@@ -1507,7 +1521,7 @@
             text += `Total Gasto Pessoal: ${formatMoney(totalMy)}\n`;
             text += `Sobra p/ Poupança: ${formatMoney(remaining)}\n`;
             text += `========================================\n`;
-            text += `Gerado por FluxoSmart Consultoria Pessoal`;
+            text += `Gerado por Controle Financeiro`;
 
             document.getElementById('exportTextContent').value = text;
         }

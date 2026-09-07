@@ -507,7 +507,8 @@
                     </div>
                     <div id="recurringMonthsContainer" class="hidden">
                         <label class="block font-semibold text-slate-700 mb-1">Estender para quantos meses?</label>
-                        <input type="number" id="expRecurringMonths" min="2" max="24" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
+                        <input type="number" id="expRecurringMonths" min="2" max="600" value="12" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 outline-none focus:border-fuchsia-500 font-medium">
+                        <p class="text-[10px] text-slate-500 mt-1">Ex: 12 = 1 ano, 60 = 5 anos, 120 = 10 anos. Sem limite de 24 meses.</p>
                     </div>
                 </div>
 
@@ -817,6 +818,20 @@
             return `${state.currentDate.getFullYear()}-${String(state.currentDate.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        // Gera uma sequência de monthKeys (ex: ["2026-10","2026-11",...]) a partir de uma data base,
+        // usada para replicar despesas recorrentes e parceladas pelos meses seguintes.
+        function getMonthKeysFrom(baseDate, count) {
+            const keys = [];
+            const d = new Date(baseDate);
+            for (let i = 0; i < count; i++) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                keys.push(`${y}-${m}`);
+                d.setMonth(d.getMonth() + 1);
+            }
+            return keys;
+        }
+
         function saveStateToStorage() {
             if (!currentUser) return;
             const cacheKey = 'fluxo_smart_state_' + currentUser.uid;
@@ -1073,101 +1088,102 @@
                     item.cardName = cardName;
                     item.paymentType = paymentType;
                 }
-            } else if (isSplit) {
-                const splitPersonName = document.getElementById('expSplitPersonName').value.trim() || 'Outra Pessoa';
-                const splitOtherAmount = parseFloat(document.getElementById('expSplitAmount').value) || 0;
-                const myAmount = amountTotal - splitOtherAmount;
-
-                if (myAmount < 0) {
-                    alert("O valor da outra pessoa não pode ser maior que o valor total.");
-                    return;
-                }
-
-                if (myAmount > 0) {
-                    state.expenses.push({
-                        id: 'exp_' + Date.now() + '_eu',
-                        monthKey: activeMonthKey,
-                        expenseGroup: expenseGroup,
-                        owner: 'EU',
-                        desc: `${desc} (Minha parte)`,
-                        amount: myAmount,
-                        category: category,
-                        cardName: cardName,
-                        paymentType: paymentType,
-                        installmentInfo: 'Dividido'
-                    });
-                }
-
-                if (splitOtherAmount > 0) {
-                    state.expenses.push({
-                        id: 'exp_' + Date.now() + '_other',
-                        monthKey: activeMonthKey,
-                        expenseGroup: expenseGroup,
-                        owner: splitPersonName,
-                        desc: `${desc} (Parte de ${splitPersonName})`,
-                        amount: splitOtherAmount,
-                        category: category,
-                        cardName: cardName,
-                        paymentType: paymentType,
-                        installmentInfo: `Reembolso de ${splitPersonName}`
-                    });
-                }
             } else {
+                // Define quantos "meses/parcelas" essa despesa vai gerar e o valor de cada ocorrência,
+                // de acordo com o Tipo de Pagamento/Recorrência escolhido. Isso vale tanto para
+                // lançamentos normais quanto para lançamentos divididos com outra pessoa (isSplit).
+                let totalUnits = 1;
+                let monthKeys = [activeMonthKey];
+
                 if (paymentType === 'cartao_parcelado') {
-                    const totalInst = parseInt(document.getElementById('expInstallments').value) || 2;
-                    const instVal = parseFloat((amountTotal / totalInst).toFixed(2));
-                    let baseDate = new Date(state.currentDate);
-
-                    for (let i = 1; i <= totalInst; i++) {
-                        const y = baseDate.getFullYear();
-                        const m = String(baseDate.getMonth() + 1).padStart(2, '0');
-                        state.expenses.push({
-                            id: 'exp_' + Date.now() + '_' + i,
-                            monthKey: `${y}-${m}`,
-                            expenseGroup: expenseGroup,
-                            owner: owner,
-                            desc: `${desc} (${i}/${totalInst})`,
-                            amount: instVal,
-                            category: category,
-                            cardName: cardName,
-                            paymentType: paymentType,
-                            installmentInfo: `${i}/${totalInst} parcelas`
-                        });
-                        baseDate.setMonth(baseDate.getMonth() + 1);
-                    }
+                    totalUnits = parseInt(document.getElementById('expInstallments').value) || 2;
+                    monthKeys = getMonthKeysFrom(state.currentDate, totalUnits);
                 } else if (paymentType === 'recorrente') {
-                    const recMonths = parseInt(document.getElementById('expRecurringMonths').value) || 12;
-                    let baseDate = new Date(state.currentDate);
+                    totalUnits = parseInt(document.getElementById('expRecurringMonths').value) || 12;
+                    monthKeys = getMonthKeysFrom(state.currentDate, totalUnits);
+                }
 
-                    for (let i = 0; i < recMonths; i++) {
-                        const y = baseDate.getFullYear();
-                        const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+                if (isSplit) {
+                    const splitPersonName = document.getElementById('expSplitPersonName').value.trim() || 'Outra Pessoa';
+                    const splitOtherAmountTotal = parseFloat(document.getElementById('expSplitAmount').value) || 0;
+                    const myAmountTotal = amountTotal - splitOtherAmountTotal;
+
+                    if (myAmountTotal < 0) {
+                        alert("O valor da outra pessoa não pode ser maior que o valor total.");
+                        return;
+                    }
+
+                    // No cartão parcelado, cada parcela carrega a fração proporcional de cada parte.
+                    // Em recorrente/pontual, o valor de cada parte se repete integralmente em cada mês.
+                    const myUnitAmount = paymentType === 'cartao_parcelado'
+                        ? parseFloat((myAmountTotal / totalUnits).toFixed(2))
+                        : myAmountTotal;
+                    const otherUnitAmount = paymentType === 'cartao_parcelado'
+                        ? parseFloat((splitOtherAmountTotal / totalUnits).toFixed(2))
+                        : splitOtherAmountTotal;
+
+                    monthKeys.forEach((mk, idx) => {
+                        const parcelaSuffix = paymentType === 'cartao_parcelado' ? ` (${idx + 1}/${totalUnits})` : '';
+                        const parcelaInfo = paymentType === 'cartao_parcelado'
+                            ? `${idx + 1}/${totalUnits} parcelas - `
+                            : (paymentType === 'recorrente' ? 'Recorrente - ' : '');
+
+                        if (myUnitAmount > 0) {
+                            state.expenses.push({
+                                id: 'exp_' + Date.now() + '_eu_' + idx,
+                                monthKey: mk,
+                                expenseGroup: expenseGroup,
+                                owner: 'EU',
+                                desc: `${desc} (Minha parte)${parcelaSuffix}`,
+                                amount: myUnitAmount,
+                                category: category,
+                                cardName: cardName,
+                                paymentType: paymentType,
+                                installmentInfo: `${parcelaInfo}Dividido`
+                            });
+                        }
+
+                        if (otherUnitAmount > 0) {
+                            state.expenses.push({
+                                id: 'exp_' + Date.now() + '_other_' + idx,
+                                monthKey: mk,
+                                expenseGroup: expenseGroup,
+                                owner: splitPersonName,
+                                desc: `${desc} (Parte de ${splitPersonName})${parcelaSuffix}`,
+                                amount: otherUnitAmount,
+                                category: category,
+                                cardName: cardName,
+                                paymentType: paymentType,
+                                installmentInfo: `${parcelaInfo}Reembolso de ${splitPersonName}`
+                            });
+                        }
+                    });
+                } else {
+                    monthKeys.forEach((mk, idx) => {
+                        let descFinal = desc;
+                        let amt = amountTotal;
+                        let instInfo = 'À vista';
+
+                        if (paymentType === 'cartao_parcelado') {
+                            amt = parseFloat((amountTotal / totalUnits).toFixed(2));
+                            descFinal = `${desc} (${idx + 1}/${totalUnits})`;
+                            instInfo = `${idx + 1}/${totalUnits} parcelas`;
+                        } else if (paymentType === 'recorrente') {
+                            instInfo = 'Recorrente';
+                        }
+
                         state.expenses.push({
-                            id: 'exp_rec_' + Date.now() + '_' + i,
-                            monthKey: `${y}-${m}`,
+                            id: 'exp_' + Date.now() + '_' + idx,
+                            monthKey: mk,
                             expenseGroup: expenseGroup,
                             owner: owner,
-                            desc: desc,
-                            amount: amountTotal,
+                            desc: descFinal,
+                            amount: amt,
                             category: category,
                             cardName: cardName,
                             paymentType: paymentType,
-                            installmentInfo: 'Recorrente'
+                            installmentInfo: instInfo
                         });
-                        baseDate.setMonth(baseDate.getMonth() + 1);
-                    }
-                } else {
-                    state.expenses.push({
-                        id: 'exp_' + Date.now(),
-                        monthKey: activeMonthKey,
-                        expenseGroup: expenseGroup,
-                        owner: owner,
-                        desc: desc,
-                        amount: amountTotal,
-                        category: category,
-                        cardName: cardName,
-                        paymentType: paymentType,
-                        installmentInfo: 'À vista'
                     });
                 }
             }

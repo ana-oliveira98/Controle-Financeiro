@@ -10,16 +10,44 @@ service cloud.firestore {
       return request.auth.token.email.lower();
     }
 
+    // Administradora do sistema (definida aqui; não pode ser alterada pelo site)
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email != null
+        && myEmail() == 'anapaularealengo@hotmail.com';
+    }
+
+    // Só a administradora e os e-mails liberados por ela na coleção "acessos" usam o sistema
+    function hasAccess() {
+      return signedIn()
+        && request.auth.token.email != null
+        && (isAdmin() || exists(/databases/$(database)/documents/acessos/$(myEmail())));
+    }
+
+    // Lista de e-mails liberados. Só a administradora vê e altera a lista;
+    // cada pessoa pode apenas conferir se o próprio e-mail está liberado.
+    match /acessos/{email} {
+      allow get: if signedIn() && request.auth.token.email != null && (isAdmin() || myEmail() == email);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && email.matches('[^@ /]+@[^@ /]+')
+        && request.resource.data.keys().hasOnly(['email', 'name', 'addedAt'])
+        && request.resource.data.email == email
+        && request.resource.data.name is string && request.resource.data.name.size() <= 100
+        && request.resource.data.addedAt is int;
+      allow delete: if isAdmin();
+    }
+
     // Painel de cada usuário: só o próprio dono lê e grava
     match /paineis/{uid} {
-      allow read, write: if signedIn() && request.auth.uid == uid;
+      allow read, write: if hasAccess() && request.auth.uid == uid;
     }
 
     // Diretório de usuários: permite saber se um e-mail tem cadastro.
     // Só é possível consultar um e-mail específico (get); listar todos é proibido.
     match /usuarios/{email} {
-      allow get: if signedIn();
-      allow create, update: if signedIn()
+      allow get: if hasAccess();
+      allow create, update: if hasAccess()
         && request.auth.token.email != null
         && myEmail() == email
         && request.resource.data.uid == request.auth.uid;
@@ -34,27 +62,55 @@ service cloud.firestore {
         return request.auth.token.email != null && myEmail() == data.debtorEmail;
       }
 
-      // Quem cobra e quem deve podem ler
-      allow read: if signedIn() && (isCreditor(resource.data) || isDebtor(resource.data));
+      function isNumber(v) {
+        return v is int || v is float;
+      }
 
-      // Só quem cobra cria, sempre em nome próprio e como "pendente"
-      allow create: if signedIn()
-        && isCreditor(request.resource.data)
-        && id.matches(request.auth.uid + '_.*')
+      // Formato obrigatório de uma cobrança gravada por quem cobra.
+      // Impede textos no lugar de números, campos extras e remetente falso.
+      function validCharge(d) {
+        return d.keys().hasOnly(['creditorUid', 'creditorEmail', 'debtorEmail', 'debtorName', 'expenseId',
+                                 'seriesKey', 'desc', 'amount', 'monthKey', 'day', 'where', 'cancelled',
+                                 'status', 'respondedAt', 'paidAt', 'updatedAt'])
+          && d.creditorUid == request.auth.uid
+          && d.creditorEmail == myEmail()
+          && d.debtorEmail is string && d.debtorEmail.size() <= 254 && d.debtorEmail.matches('[^@ ]+@[^@ ]+')
+          && d.debtorEmail != myEmail()
+          && d.debtorName is string && d.debtorName.size() <= 100
+          && d.expenseId is string && d.expenseId.size() <= 100
+          && d.seriesKey is string && d.seriesKey.size() <= 100
+          && d.desc is string && d.desc.size() <= 300
+          && d.where is string && d.where.size() <= 100
+          && d.monthKey is string && d.monthKey.matches('[0-9]{4}-(0[1-9]|1[0-2])')
+          && isNumber(d.amount) && d.amount >= 0 && d.amount < 100000000
+          && (d.day == null || (d.day is int && d.day >= 1 && d.day <= 31))
+          && d.cancelled is bool
+          && d.status in ['pendente', 'aceita', 'recusada', 'paga', 'arquivada'];
+      }
+
+      // Quem cobra e quem deve podem ler
+      allow read: if hasAccess() && (isCreditor(resource.data) || isDebtor(resource.data));
+
+      // Só quem cobra cria, sempre em nome próprio, como "pendente" e com identificador seguro
+      allow create: if hasAccess()
+        && id.matches(request.auth.uid + '_[A-Za-z0-9_-]{1,100}')
+        && validCharge(request.resource.data)
         && request.resource.data.status == 'pendente';
 
-      allow update: if signedIn() && (
+      allow update: if hasAccess() && (
         // Quem cobra pode alterar os dados da cobrança (mas não trocar o dono)
-        (isCreditor(resource.data) && request.resource.data.creditorUid == resource.data.creditorUid)
+        (isCreditor(resource.data) && validCharge(request.resource.data))
         ||
         // Quem deve só pode responder: aceitar, recusar, marcar como paga ou arquivar
         (isDebtor(resource.data)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt', 'paidAt'])
-          && request.resource.data.status in ['aceita', 'recusada', 'paga', 'arquivada'])
+          && request.resource.data.status in ['aceita', 'recusada', 'paga', 'arquivada']
+          && request.resource.data.respondedAt is int
+          && (request.resource.data.paidAt == null || request.resource.data.paidAt is int))
       );
 
       // Só quem cobra pode apagar
-      allow delete: if signedIn() && isCreditor(resource.data);
+      allow delete: if hasAccess() && isCreditor(resource.data);
     }
   }
 }

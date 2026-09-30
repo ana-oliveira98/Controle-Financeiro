@@ -57,6 +57,14 @@ Depois de publicar, peça para os usuários recarregarem com **Ctrl+F5**, para n
 | `paineis/{uid}` | Todos os lançamentos, receitas e contatos do usuário | Só o próprio usuário |
 | `usuarios/{email}` | Registro para saber se um e-mail tem cadastro | Qualquer usuário logado pode consultar **um** e-mail; ninguém pode listar |
 | `cobrancas/{id}` | Cobranças enviadas entre usuários | Quem cobrou e quem deve |
+| `acessos/{email}` | E-mails liberados para usar o sistema | Só a administradora vê e altera; cada pessoa só confere o próprio e-mail |
+
+## Controle de acesso
+
+- A administradora é **anapaularealengo@hotmail.com**, definida no `firestore.rules` (função `isAdmin`) e no `index.html` (`ADMIN_EMAIL`). Para trocar, altere os dois e publique as regras de novo.
+- Na aba **Administração**, visível só para a administradora, ela libera ou remove os e-mails que podem usar o sistema.
+- Quem não está na lista consegue criar o login, mas vê a tela "Acesso não liberado" e não acessa nenhum dado. O bloqueio é feito pelas regras do Firestore.
+- Remover um acesso não apaga os dados da pessoa.
 
 ### Limites conhecidos
 

@@ -1,0 +1,8 @@
+# Ferramenta de build do Tailwind (baixada localmente, não vai para o repositório)
+tailwindcss.exe
+tailwindcss-*.exe
+node_modules/
+
+# Backups e cópias locais
+*backup*
+*Copia*

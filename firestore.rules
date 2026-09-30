@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    // Painel de cada usuário: só o próprio dono lê e grava
+    match /paineis/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Diretório de usuários: permite saber se um e-mail tem cadastro.
+    // Só é possível consultar um e-mail específico (get); listar todos é proibido.
+    match /usuarios/{email} {
+      allow get: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.token.email != null
+        && myEmail() == email
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Cobranças entre usuários
+    match /cobrancas/{id} {
+      function isCreditor(data) {
+        return request.auth.uid == data.creditorUid;
+      }
+      function isDebtor(data) {
+        return request.auth.token.email != null && myEmail() == data.debtorEmail;
+      }
+
+      // Quem cobra e quem deve podem ler
+      allow read: if signedIn() && (isCreditor(resource.data) || isDebtor(resource.data));
+
+      // Só quem cobra cria, sempre em nome próprio e como "pendente"
+      allow create: if signedIn()
+        && isCreditor(request.resource.data)
+        && id.matches(request.auth.uid + '_.*')
+        && request.resource.data.status == 'pendente';
+
+      allow update: if signedIn() && (
+        // Quem cobra pode alterar os dados da cobrança (mas não trocar o dono)
+        (isCreditor(resource.data) && request.resource.data.creditorUid == resource.data.creditorUid)
+        ||
+        // Quem deve só pode responder: aceitar, recusar, marcar como paga ou arquivar
+        (isDebtor(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt', 'paidAt'])
+          && request.resource.data.status in ['aceita', 'recusada', 'paga', 'arquivada'])
+      );
+
+      // Só quem cobra pode apagar
+      allow delete: if signedIn() && isCreditor(resource.data);
+    }
+  }
+}

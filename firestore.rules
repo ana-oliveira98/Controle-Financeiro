@@ -41,12 +41,16 @@ service cloud.firestore {
     // Painel de cada usuário: só o próprio dono lê e grava
     match /paineis/{uid} {
       allow read, write: if hasAccess() && request.auth.uid == uid;
+      // A administradora pode excluir o perfil (dados) de uma pessoa, mas não pode lê-lo
+      allow delete: if isAdmin();
     }
 
     // Diretório de usuários: permite saber se um e-mail tem cadastro.
     // Só é possível consultar um e-mail específico (get); listar todos é proibido.
     match /usuarios/{email} {
       allow get: if hasAccess();
+      // A administradora vê quem tem cadastro e pode excluir o registro ao excluir um perfil
+      allow list, delete: if isAdmin();
       allow create, update: if hasAccess()
         && request.auth.token.email != null
         && myEmail() == email
@@ -89,7 +93,8 @@ service cloud.firestore {
       }
 
       // Quem cobra e quem deve podem ler
-      allow read: if hasAccess() && (isCreditor(resource.data) || isDebtor(resource.data));
+      // (a administradora também, para conseguir apagar as cobranças de um perfil excluído)
+      allow read: if isAdmin() || (hasAccess() && (isCreditor(resource.data) || isDebtor(resource.data)));
 
       // Só quem cobra cria, sempre em nome próprio, como "pendente" e com identificador seguro
       allow create: if hasAccess()
@@ -109,8 +114,8 @@ service cloud.firestore {
           && (request.resource.data.paidAt == null || request.resource.data.paidAt is int))
       );
 
-      // Só quem cobra pode apagar
-      allow delete: if hasAccess() && isCreditor(resource.data);
+      // Só quem cobra pode apagar (e a administradora, ao excluir um perfil)
+      allow delete: if isAdmin() || (hasAccess() && isCreditor(resource.data));
     }
   }
 }

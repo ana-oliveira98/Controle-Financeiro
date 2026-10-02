@@ -584,6 +584,7 @@
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
                             <th class="py-3 px-4">Nome</th>
                             <th class="py-3 px-4">E-mail</th>
+                            <th class="py-3 px-4">Situação</th>
                             <th class="py-3 px-4">Liberado em</th>
                             <th class="py-3 px-4 text-right">Ações</th>
                         </tr>
@@ -592,7 +593,10 @@
                 </table>
             </div>
             <div id="accessEmpty" class="hidden py-8 text-center text-xs text-slate-400">Nenhum e-mail liberado ainda.</div>
-            <p class="px-5 py-3 text-[10px] text-slate-500 border-t border-slate-100">Remover um acesso bloqueia a pessoa na hora, mas não apaga os dados dela. Se o acesso for liberado de novo, tudo volta como estava.</p>
+            <div class="px-5 py-3 text-[10px] text-slate-500 border-t border-slate-100 space-y-1">
+                <p><strong>Remover acesso:</strong> bloqueia a pessoa na hora, mas guarda os dados dela. Se liberar de novo, tudo volta como estava.</p>
+                <p><strong>Excluir perfil:</strong> apaga definitivamente os dados da pessoa (lançamentos, receitas e cobranças) e o acesso. O login dela (e-mail e senha) continua existindo até ser apagado em Firebase Console → Authentication → Users.</p>
+            </div>
         </div>
     </section>
 
@@ -1180,7 +1184,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
         import {
             getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-            collection, query, where, onSnapshot, getDocs
+            collection, query, where, onSnapshot, getDocs, writeBatch
         } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
         import {
             getAuth, onAuthStateChanged, signOut,
@@ -1240,6 +1244,35 @@
         window.fbAddAccess = (email, name) =>
             setDoc(doc(db, "acessos", email.toLowerCase()), { email: email.toLowerCase(), name, addedAt: Date.now() });
         window.fbRemoveAccess = (email) => deleteDoc(doc(db, "acessos", email.toLowerCase()));
+
+        // Pessoas com cadastro no sistema (registradas ao entrar): [{ email, uid }]
+        window.fbListUsers = async function () {
+            const snap = await getDocs(collection(db, "usuarios"));
+            const list = [];
+            snap.forEach(d => list.push(d.data()));
+            return list;
+        };
+
+        // Exclui o perfil de uma pessoa: dados (painel), cobranças enviadas e recebidas,
+        // registro de cadastro e acesso. O login (e-mail/senha) só pode ser apagado no console.
+        window.fbDeleteProfile = async function (email, uid) {
+            email = email.toLowerCase();
+            const col = collection(db, "cobrancas");
+            const refs = [];
+            if (uid) {
+                refs.push(doc(db, "paineis", uid));
+                (await getDocs(query(col, where("creditorUid", "==", uid)))).forEach(d => refs.push(d.ref));
+            }
+            (await getDocs(query(col, where("debtorEmail", "==", email)))).forEach(d => refs.push(d.ref));
+            refs.push(doc(db, "usuarios", email));
+            refs.push(doc(db, "acessos", email));
+            for (let i = 0; i < refs.length; i += 400) {
+                const batch = writeBatch(db);
+                refs.slice(i, i + 400).forEach(r => batch.delete(r));
+                await batch.commit();
+            }
+            return refs.length;
+        };
 
         // ---- Diretório de usuários (para saber se uma pessoa tem cadastro) ----
         // Documento "usuarios/{email}" criado por cada usuário no próprio login.
@@ -1478,34 +1511,110 @@
             }
         }
 
+        // Pessoas mostradas na aba Administração: e-mail -> { email, name, addedAt, allowed, uid }
+        let adminPeople = {};
+
         async function renderAccessList() {
             if (!isAdminUser(currentUser)) return;
             const tbody = document.getElementById('accessTableBody');
-            tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">Carregando...</td></tr>';
-            let list;
+            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400">Carregando...</td></tr>';
+            let accessList, users = [], usersFailed = false;
             try {
-                list = await window.fbListAccess();
+                accessList = await window.fbListAccess();
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-rose-600">Não foi possível carregar a lista. Confira se as regras do Firestore foram publicadas.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-rose-600">Não foi possível carregar a lista. Confira se as regras do Firestore foram publicadas.</td></tr>';
                 return;
             }
-            list.sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email)));
+            try {
+                users = await window.fbListUsers();
+            } catch (e) {
+                console.error(e);
+                usersFailed = true;
+            }
+
+            // Junta quem está liberado (acessos) com quem tem cadastro (usuarios)
+            adminPeople = {};
+            accessList.forEach(a => {
+                const email = String(a.email || '').toLowerCase();
+                if (email) adminPeople[email] = { email, name: a.name || '', addedAt: a.addedAt, allowed: true, uid: null };
+            });
+            users.forEach(u => {
+                const email = String(u.email || '').toLowerCase();
+                if (!email || email === ADMIN_EMAIL) return;
+                adminPeople[email] = Object.assign(adminPeople[email] || { email, name: '', addedAt: null, allowed: false }, { uid: u.uid || null });
+            });
+
+            const list = Object.values(adminPeople).sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email)));
             document.getElementById('accessEmpty').classList.toggle('hidden', list.length > 0);
-            tbody.innerHTML = list.map(a => {
-                const email = String(a.email || '');
-                const arg = encodeURIComponent(email).replace(/'/g, '%27');
-                const date = typeof a.addedAt === 'number' ? new Date(a.addedAt).toLocaleDateString('pt-BR') : '—';
+            const btn = (onclick, label, cls) => `<button onclick="${onclick}" class="px-2.5 py-1 rounded-lg text-[11px] font-medium ${cls}">${label}</button>`;
+            tbody.innerHTML = list.map(p => {
+                const arg = encodeURIComponent(p.email).replace(/'/g, '%27');
+                const date = typeof p.addedAt === 'number' ? new Date(p.addedAt).toLocaleDateString('pt-BR') : '—';
+                const status = p.allowed
+                    ? '<span class="inline-flex px-2 py-0.5 rounded-full border text-[10px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200">Liberado</span>'
+                    : '<span class="inline-flex px-2 py-0.5 rounded-full border text-[10px] font-semibold bg-slate-100 text-slate-600 border-slate-200">Bloqueado</span>';
+                const registered = p.uid ? '' : '<span class="block text-[10px] text-slate-400 mt-0.5">Ainda não entrou no sistema</span>';
+                const accessBtn = p.allowed
+                    ? btn(`removeAccessEmail('${arg}')`, 'Remover acesso', 'bg-slate-100 hover:bg-slate-200 text-slate-700')
+                    : btn(`reallowAccess('${arg}')`, 'Liberar acesso', 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700');
                 return `
                 <tr class="hover:bg-slate-50 transition">
-                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(a.name || '—')}</td>
-                    <td class="py-3 px-4 text-slate-600">${escapeHtml(email)}</td>
+                    <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(p.name || '—')}</td>
+                    <td class="py-3 px-4 text-slate-600">${escapeHtml(p.email)}</td>
+                    <td class="py-3 px-4">${status}${registered}</td>
                     <td class="py-3 px-4 text-slate-500">${date}</td>
-                    <td class="py-3 px-4 text-right">
-                        <button onclick="removeAccessEmail('${arg}')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-rose-50 hover:bg-rose-100 text-rose-700">Remover acesso</button>
+                    <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                        ${accessBtn}
+                        ${btn(`deleteProfile('${arg}')`, 'Excluir perfil', 'bg-rose-600 hover:bg-rose-700 text-white')}
                     </td>
                 </tr>`;
-            }).join('');
+            }).join('') + (usersFailed
+                ? '<tr><td colspan="5" class="py-3 px-4 text-[11px] text-amber-700 bg-amber-50">Não foi possível ver quem tem cadastro (publique as regras novas do Firestore). Por enquanto, só aparecem os e-mails liberados.</td></tr>'
+                : '');
+        }
+
+        async function reallowAccess(encoded) {
+            const email = decodeURIComponent(encoded);
+            try {
+                await window.fbAddAccess(email, (adminPeople[email] && adminPeople[email].name) || '');
+                showToast(`Acesso liberado para ${email}.`);
+                renderAccessList();
+            } catch (e) {
+                console.error(e);
+                alert('Não foi possível liberar o acesso.');
+            }
+        }
+
+        // Exclui definitivamente os dados de uma pessoa (pede para digitar o e-mail para confirmar)
+        async function deleteProfile(encoded) {
+            const email = decodeURIComponent(encoded);
+            if (email === ADMIN_EMAIL) {
+                alert('O perfil da administradora não pode ser excluído por aqui.');
+                return;
+            }
+            const person = adminPeople[email] || { email, uid: null };
+            const typed = prompt(
+                `EXCLUIR O PERFIL DE ${email}\n\n` +
+                `Isso apaga DEFINITIVAMENTE todos os lançamentos, receitas e cobranças dessa pessoa e remove o acesso dela. Não dá para desfazer.\n` +
+                `Se ela quiser guardar os dados, peça antes para baixar o Excel (Relatório / Backup).\n\n` +
+                `Para confirmar, digite o e-mail da pessoa:`);
+            if (typed === null) return;
+            if (typed.trim().toLowerCase() !== email) {
+                alert('O e-mail digitado não confere. Nada foi excluído.');
+                return;
+            }
+            try {
+                await window.fbDeleteProfile(email, person.uid);
+                showToast(`Perfil de ${email} excluído.`);
+                if (!person.uid) {
+                    alert(`Acesso de ${email} removido.\n\nEssa pessoa ainda não tinha entrado na versão atual do sistema, então não foi possível localizar os dados dela para apagar. Se existirem, ficam inacessíveis enquanto o acesso não for liberado.`);
+                }
+                renderAccessList();
+            } catch (e) {
+                console.error(e);
+                alert('Não foi possível excluir o perfil. Confira se as regras novas do Firestore foram publicadas e tente de novo.');
+            }
         }
 
         async function addAccessEmail(event) {

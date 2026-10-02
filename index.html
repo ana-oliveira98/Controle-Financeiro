@@ -2,8 +2,16 @@
 <html lang="pt-BR" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Controle Financeiro</title>
+    <!-- App instalável (PWA): ícone na tela de início, abre em tela cheia -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Finanças">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
     <!-- Proteção contra clickjacking: a página fica oculta até confirmar que NÃO está
          dentro de outro site (iframe). Se estiver, abre o sistema na janela principal. -->
     <style id="antiClickjack">body { display: none !important; }</style>
@@ -33,6 +41,20 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .tab-btn[aria-selected="true"] { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
         .tabular { font-variant-numeric: tabular-nums; }
+
+        /* ---- Ajustes para uso como app no celular (iPhone/Android) ---- */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            /* Não deixa o conteúdo ficar atrás do entalhe/barra de gestos do iPhone */
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        #toast { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+        /* O iPhone dá zoom automático em campos com letra menor que 16px: evita isso no celular */
+        @media (max-width: 640px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased selection:bg-fuchsia-500 selection:text-white">
@@ -67,6 +89,49 @@
                 <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-fuchsia-700 hover:underline font-medium">Não tem conta? Criar conta</button>
                 <button type="button" onclick="handleForgotPassword()" class="text-xs text-slate-500 hover:underline">Esqueci minha senha</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===================== TROCA DE SENHA / AÇÕES DO E-MAIL ===================== -->
+    <!-- Aberta pelo link do e-mail (?mode=resetPassword&oobCode=...). O link só é "gasto"
+         quando a pessoa confirma a senha nova, não ao abrir a página. -->
+    <div id="actionScreen" class="hidden flex-1 items-center justify-center px-4">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg border border-slate-200 p-6 sm:p-8 space-y-4">
+            <div class="flex flex-col items-center">
+                <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white shadow-md shadow-purple-600/20 mb-3">
+                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                </div>
+                <h1 id="actionTitle" class="text-lg font-bold text-slate-900">Criar nova senha</h1>
+                <p id="actionSubtitle" class="text-xs text-slate-500 mt-1 text-center">Verificando o link...</p>
+            </div>
+
+            <div id="actionError" class="hidden text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></div>
+            <div id="actionSuccess" class="hidden text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"></div>
+
+            <!-- Formulário da senha nova -->
+            <form id="resetForm" class="hidden space-y-3">
+                <div>
+                    <label class="text-xs font-medium text-slate-600 block mb-1" for="resetPassword">Nova senha</label>
+                    <input id="resetPassword" type="password" required minlength="6" autocomplete="new-password" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 outline-none" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-600 block mb-1" for="resetPasswordConfirm">Repita a nova senha</label>
+                    <input id="resetPasswordConfirm" type="password" required minlength="6" autocomplete="new-password" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">A senha deve ter no mínimo 6 caracteres e 1 caractere especial (ex: ! @ # $ % &).</p>
+                </div>
+                <button type="submit" id="resetSubmitBtn" class="w-full px-4 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium rounded-xl text-sm shadow-md shadow-fuchsia-600/20 transition">Salvar nova senha</button>
+            </form>
+
+            <!-- Pedir um novo link (quando o atual venceu ou já foi usado) -->
+            <form id="resendForm" class="hidden space-y-3 pt-1">
+                <div>
+                    <label class="text-xs font-medium text-slate-600 block mb-1" for="resendEmail">Seu e-mail</label>
+                    <input id="resendEmail" type="email" required autocomplete="email" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 outline-none" placeholder="voce@email.com">
+                </div>
+                <button type="submit" id="resendBtn" class="w-full px-4 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium rounded-xl text-sm shadow-md shadow-fuchsia-600/20 transition">Enviar novo link</button>
+            </form>
+
+            <button type="button" onclick="finishAuthAction()" class="w-full text-xs text-fuchsia-700 hover:underline font-medium">Voltar para o login</button>
         </div>
     </div>
 
@@ -180,6 +245,18 @@
     </header>
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto custom-scrollbar">
+
+    <!-- Dica de instalação do app (só no iPhone/iPad, fora do app instalado) -->
+    <div id="installHint" class="hidden mb-6 bg-white border border-fuchsia-200 rounded-2xl p-4 text-xs text-slate-700 items-start justify-between gap-3 shadow-xs">
+        <div class="flex items-start space-x-3">
+            <img src="icons/apple-touch-icon.png" alt="" class="w-11 h-11 rounded-xl shrink-0">
+            <div>
+                <p class="font-bold text-slate-900 text-sm">Instale o app no seu celular</p>
+                <p class="mt-0.5 leading-relaxed">Toque em <strong>Compartilhar</strong> <i data-lucide="share" class="w-3.5 h-3.5 inline -mt-0.5 text-sky-600"></i> na barra do navegador e depois em <strong>"Adicionar à Tela de Início"</strong>. O sistema passa a abrir como um app, em tela cheia.</p>
+            </div>
+        </div>
+        <button onclick="dismissInstallHint()" class="p-1 text-slate-400 hover:text-slate-600 shrink-0" title="Fechar"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
 
     <!-- Aviso: lançamentos antigos com mesmo nome e valor que precisam de revisão -->
     <div id="reviewWarningsBanner" class="hidden mb-6 bg-amber-50 border border-amber-300 rounded-2xl p-4 text-xs text-amber-900 space-y-2">
@@ -1108,7 +1185,7 @@
         import {
             getAuth, onAuthStateChanged, signOut,
             createUserWithEmailAndPassword, signInWithEmailAndPassword,
-            sendPasswordResetEmail
+            sendPasswordResetEmail, verifyPasswordResetCode, confirmPasswordReset, applyActionCode
         } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
         const firebaseConfig = {
@@ -1123,6 +1200,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        auth.languageCode = 'pt-BR'; // e-mails do Firebase (ex.: redefinição de senha) em português
 
         // Salva o estado no documento do usuário logado (uid)
         window.fbSaveState = async function (uid, stateObj) {
@@ -1196,7 +1274,28 @@
         window.fbSignUp = (email, password) => createUserWithEmailAndPassword(auth, email, password);
         window.fbSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.fbLogout = () => signOut(auth);
-        window.fbResetPassword = (email) => sendPasswordResetEmail(auth, email);
+        // Envia o e-mail de redefinição com um link de volta para este site.
+        // Se o endereço atual não for um domínio autorizado (ex.: teste local), envia sem o link de volta.
+        window.fbResetPassword = async function (email) {
+            const continueUrl = location.origin + location.pathname;
+            try {
+                await sendPasswordResetEmail(auth, email, { url: continueUrl });
+            } catch (e) {
+                if (e.code === 'auth/unauthorized-continue-uri' || e.code === 'auth/invalid-continue-uri') {
+                    await sendPasswordResetEmail(auth, email);
+                } else {
+                    throw e;
+                }
+            }
+        };
+
+        // Tela própria de troca de senha (link do e-mail abre o sistema com ?mode=resetPassword&oobCode=...)
+        window.fbVerifyResetCode = (code) => verifyPasswordResetCode(auth, code);   // não consome o link
+        window.fbConfirmReset = (code, newPassword) => confirmPasswordReset(auth, code, newPassword);
+        window.fbApplyActionCode = (code) => applyActionCode(auth, code);
+
+        // Avisa a página que as funções do Firebase estão prontas (usado pela tela de troca de senha)
+        if (window.onFirebaseReady) window.onFirebaseReady();
 
         // Chamado sempre que o estado de login muda (login, logout, ao abrir a página)
         onAuthStateChanged(auth, (user) => {
@@ -1267,6 +1366,11 @@
 
         // Chamado pelo módulo Firebase sempre que o login muda
         window.onAuthReady = async function (user) {
+            // Enquanto a tela de troca de senha (link do e-mail) estiver aberta, só guarda o login
+            lastAuthUser = user;
+            authStateKnown = true;
+            if (pendingAuthAction) return;
+
             currentUser = user;
             const authScreen = document.getElementById('authScreen');
             const appShell = document.getElementById('appShell');
@@ -1307,6 +1411,7 @@
                     return;
                 }
                 showLoadError(false);
+                setupInstallHint();
                 lucide.createIcons();
                 updateMonthDisplay();
                 calculateAndRender();
@@ -1330,6 +1435,27 @@
                 lucide.createIcons();
             }
         };
+
+        // ===================== App instalável (dica para iPhone/iPad) =====================
+        function isRunningAsApp() {
+            return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        }
+
+        function setupInstallHint() {
+            const ua = navigator.userAgent;
+            const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            let dismissed = false;
+            try { dismissed = localStorage.getItem('installHintDismissed') === '1'; } catch (e) { /* ignora */ }
+            const show = isIOS && !isRunningAsApp() && !dismissed;
+            const el = document.getElementById('installHint');
+            el.classList.toggle('hidden', !show);
+            el.classList.toggle('flex', show);
+        }
+
+        function dismissInstallHint() {
+            try { localStorage.setItem('installHintDismissed', '1'); } catch (e) { /* ignora */ }
+            setupInstallHint();
+        }
 
         // ===================== Administração de acessos =====================
         // A administradora também é definida nas regras do Firestore (é lá que vale a segurança);
@@ -1447,7 +1573,9 @@
                 'auth/invalid-credential': 'E-mail ou senha incorretos.',
                 'auth/wrong-password': 'E-mail ou senha incorretos.',
                 'auth/user-not-found': 'Não existe conta com esse e-mail.',
-                'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente de novo.'
+                'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente de novo.',
+                'auth/missing-email': 'Informe o e-mail.',
+                'auth/network-request-failed': 'Sem conexão com a internet. Verifique e tente novamente.'
             };
             return map[code] || 'Ocorreu um erro. Tente novamente.';
         }
@@ -1488,15 +1616,182 @@
             }
         });
 
+        // Evita vários pedidos seguidos: quando há mais de um e-mail, a pessoa costuma abrir um link antigo.
+        let lastResetRequestAt = 0;
+
         function handleForgotPassword() {
             const email = document.getElementById('authEmail').value.trim();
             if (!email) {
                 showAuthError('Digite seu e-mail no campo acima primeiro, depois clique em "Esqueci minha senha".');
                 return;
             }
+            const wait = 60 - Math.floor((Date.now() - lastResetRequestAt) / 1000);
+            if (wait > 0) {
+                showAuthError(`Já enviamos um e-mail. Aguarde ${wait}s antes de pedir outro e use sempre o e-mail mais recente.`);
+                return;
+            }
+            lastResetRequestAt = Date.now();
             window.fbResetPassword(email)
-                .then(() => alert('Enviamos um e-mail para ' + email + ' com instruções para redefinir sua senha.'))
-                .catch((err) => showAuthError(translateAuthError(err.code)));
+                .then(() => alert(`Enviamos um e-mail para ${email} com o link para criar uma nova senha.\n\n• Use somente o e-mail MAIS RECENTE (pedidos anteriores podem não funcionar).\n• O link vale por 1 hora.\n• Se não chegar, confira a caixa de spam / lixo eletrônico.`))
+                .catch((err) => {
+                    lastResetRequestAt = 0;
+                    showAuthError(translateAuthError(err.code));
+                });
+        }
+
+        // ===================== Troca de senha pelo link do e-mail =====================
+        // O e-mail do Firebase abre o sistema com ?mode=resetPassword&oobCode=...
+        // Abrir a página apenas CONFERE o link; ele só é usado quando a pessoa salva a senha nova.
+        const authActionParams = new URLSearchParams(location.search);
+        const authActionMode = authActionParams.get('mode');
+        const authActionCode = authActionParams.get('oobCode');
+        let pendingAuthAction = !!(authActionMode && authActionCode);
+        let lastAuthUser = null;      // login atual, guardado enquanto a tela de troca de senha está aberta
+        let authStateKnown = false;
+        let resetAccountEmail = '';
+
+        function setActionMessage(kind, message) {
+            const err = document.getElementById('actionError');
+            const ok = document.getElementById('actionSuccess');
+            err.classList.toggle('hidden', kind !== 'error');
+            ok.classList.toggle('hidden', kind !== 'success');
+            if (kind === 'error') err.textContent = message;
+            if (kind === 'success') ok.textContent = message;
+        }
+
+        function showActionScreen() {
+            document.getElementById('authScreen').classList.add('hidden');
+            const el = document.getElementById('actionScreen');
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function showLinkProblem(code) {
+            const messages = {
+                'auth/expired-action-code': 'Este link expirou. Por segurança, ele vale por 1 hora.',
+                'auth/invalid-action-code': 'Este link já foi usado ou foi substituído por um pedido mais recente. Se você pediu a troca de senha mais de uma vez, só o último e-mail funciona.',
+                'auth/user-disabled': 'Esta conta está desativada. Fale com a administradora.',
+                'auth/user-not-found': 'Não encontramos a conta deste link. Fale com a administradora.',
+                'auth/network-request-failed': 'Sem conexão com a internet. Verifique e abra o link de novo.'
+            };
+            setActionMessage('error', messages[code] || 'Não foi possível usar este link. Peça um novo abaixo.');
+            document.getElementById('resetForm').classList.add('hidden');
+            if (authActionMode === 'resetPassword' && code !== 'auth/user-disabled') {
+                document.getElementById('actionSubtitle').textContent = 'Peça um novo link para criar sua senha:';
+                document.getElementById('resendEmail').value = resetAccountEmail;
+                document.getElementById('resendForm').classList.remove('hidden');
+            } else {
+                document.getElementById('actionSubtitle').textContent = '';
+            }
+        }
+
+        async function startAuthAction() {
+            if (!pendingAuthAction) return;
+            showActionScreen();
+            const title = document.getElementById('actionTitle');
+            const subtitle = document.getElementById('actionSubtitle');
+
+            if (authActionMode === 'resetPassword') {
+                try {
+                    resetAccountEmail = await window.fbVerifyResetCode(authActionCode);
+                    subtitle.textContent = `Conta: ${resetAccountEmail}`;
+                    document.getElementById('resetForm').classList.remove('hidden');
+                    document.getElementById('resetPassword').focus();
+                } catch (e) {
+                    console.error(e);
+                    showLinkProblem(e.code);
+                }
+            } else if (authActionMode === 'verifyEmail' || authActionMode === 'recoverEmail') {
+                title.textContent = authActionMode === 'verifyEmail' ? 'Confirmar e-mail' : 'Recuperar e-mail';
+                try {
+                    await window.fbApplyActionCode(authActionCode);
+                    subtitle.textContent = '';
+                    setActionMessage('success', authActionMode === 'verifyEmail'
+                        ? 'E-mail confirmado com sucesso! Você já pode entrar no sistema.'
+                        : 'O e-mail da sua conta foi restaurado. Recomendamos trocar sua senha por segurança.');
+                } catch (e) {
+                    console.error(e);
+                    showLinkProblem(e.code);
+                }
+            } else {
+                subtitle.textContent = '';
+                setActionMessage('error', 'Este link não é reconhecido pelo sistema.');
+            }
+        }
+
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('resetPassword').value;
+            const confirmPassword = document.getElementById('resetPasswordConfirm').value;
+            if (password !== confirmPassword) {
+                setActionMessage('error', 'As duas senhas não são iguais. Digite novamente.');
+                return;
+            }
+            if (!isPasswordValid(password)) {
+                setActionMessage('error', 'A senha precisa ter no mínimo 6 caracteres e pelo menos 1 caractere especial (ex: ! @ # $ % &).');
+                return;
+            }
+            const btn = document.getElementById('resetSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+            try {
+                await window.fbConfirmReset(authActionCode, password);
+                document.getElementById('resetForm').classList.add('hidden');
+                document.getElementById('actionSubtitle').textContent = '';
+                setActionMessage('success', 'Senha alterada com sucesso! Clique em "Voltar para o login" e entre com a nova senha.');
+            } catch (err) {
+                console.error(err);
+                if (err.code === 'auth/weak-password') {
+                    setActionMessage('error', 'Essa senha é fraca demais. Escolha outra, mais longa.');
+                } else {
+                    showLinkProblem(err.code);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Salvar nova senha';
+            }
+        });
+
+        document.getElementById('resendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resendEmail').value.trim();
+            const btn = document.getElementById('resendBtn');
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            try {
+                await window.fbResetPassword(email);
+                lastResetRequestAt = Date.now();
+                document.getElementById('resendForm').classList.add('hidden');
+                setActionMessage('success', `Enviamos um novo link para ${email}. Abra somente esse e-mail mais recente, em até 1 hora. Se não chegar, confira o spam / lixo eletrônico.`);
+            } catch (err) {
+                console.error(err);
+                setActionMessage('error', translateAuthError(err.code));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar novo link';
+            }
+        });
+
+        // Fecha a tela de troca de senha e volta ao fluxo normal (login ou sistema)
+        function finishAuthAction() {
+            pendingAuthAction = false;
+            history.replaceState(null, '', location.pathname);
+            const el = document.getElementById('actionScreen');
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+            if (resetAccountEmail) document.getElementById('authEmail').value = resetAccountEmail;
+            if (authStateKnown) {
+                window.onAuthReady(lastAuthUser);
+            } else {
+                document.getElementById('authScreen').classList.remove('hidden');
+            }
+        }
+
+        if (pendingAuthAction) {
+            showActionScreen();
+            // As funções do Firebase são carregadas logo depois deste script
+            if (window.fbVerifyResetCode) startAuthAction(); else window.onFirebaseReady = startAuthAction;
         }
 
         function handleLogout() {

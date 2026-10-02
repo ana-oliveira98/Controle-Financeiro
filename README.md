@@ -12,6 +12,15 @@ Sistema web de controle financeiro doméstico: receitas mês a mês, despesas fi
 | `styles.css` | Estilos gerados pelo Tailwind a partir do `index.html` |
 | `firestore.rules` | Regras de segurança do banco de dados (publicar no Firebase Console) |
 | `tailwind.config.js`, `src/input.css` | Configuração para gerar o `styles.css` novamente |
+| `manifest.webmanifest`, `icons/` | Configuração e ícones do app instalável (tela de início do celular) |
+
+## Instalar como app no celular
+
+- **iPhone/iPad:** abra o site no Safari → botão **Compartilhar** → **Adicionar à Tela de Início**.
+- **Android:** abra no Chrome → menu **⋮** → **Instalar app** (ou "Adicionar à tela inicial").
+
+O app abre em tela cheia, com ícone próprio. Ele se atualiza sozinho quando uma nova versão é publicada no GitHub; se não aparecer, feche o app e abra de novo.
+No iPhone, o app instalado **não compartilha o login com o Safari**: na primeira vez, é preciso entrar com e-mail e senha.
 
 ## Colocar no ar (GitHub Pages)
 
@@ -28,6 +37,11 @@ No [Firebase Console](https://console.firebase.google.com), projeto `domestic-bu
    Sem isso, o login não funciona no site publicado.
 2. **Firestore Database → Regras**: cole o conteúdo de `firestore.rules` e clique em **Publicar**.
    Sempre que o arquivo mudar, publique de novo.
+
+3. **Authentication → Templates → Redefinição de senha → ✏️ → Personalizar URL de ação**: informe
+   `https://ana-oliveira98.github.io/Controle-Financeiro/` e salve.
+   Assim, o link do e-mail abre a tela de troca de senha do próprio sistema, em português. O link só é usado quando a pessoa salva a senha nova, e se ele estiver vencido aparece a opção de pedir outro.
+   Essa URL vale para todos os modelos de e-mail; o sistema também trata a confirmação e a recuperação de e-mail.
 
 ### Recomendado
 

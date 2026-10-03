@@ -1117,8 +1117,16 @@
                 </div>
 
                 <div id="installmentContainer" class="hidden p-3.5 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-2">
-                    <label class="block font-semibold text-indigo-900 mb-1">Número total de parcelas</label>
-                    <input type="number" id="expInstallments" min="2" max="120" value="2" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-indigo-500">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div id="installmentCurrentContainer" class="hidden">
+                            <label class="block font-semibold text-indigo-900 mb-1" for="expInstallmentCurrent">Parcela atual</label>
+                            <input type="number" id="expInstallmentCurrent" min="1" max="120" value="1" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-indigo-500">
+                        </div>
+                        <div id="installmentTotalWrap" class="col-span-2">
+                            <label class="block font-semibold text-indigo-900 mb-1" for="expInstallments">Número total de parcelas</label>
+                            <input type="number" id="expInstallments" min="2" max="120" value="2" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
                     <p id="installmentHint" class="text-[10px] text-indigo-700">O valor total será dividido e replicado automaticamente para os próximos meses.</p>
                 </div>
 
@@ -1204,7 +1212,7 @@
 
     <!-- Modal Importar Fatura (PDF) -->
     <div id="invoiceModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs max-h-[92vh] flex flex-col">
+        <div class="bg-white rounded-2xl max-w-6xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs max-h-[94vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
                     <i data-lucide="file-up" class="w-5 h-5 text-indigo-600"></i>
@@ -1222,9 +1230,10 @@
                     <span class="block font-semibold text-slate-700 mb-1">Fatura do mês</span>
                     <span id="invoiceMonthLabel" class="block px-3 py-2 bg-slate-100 rounded-xl font-semibold text-slate-700"></span>
                 </div>
-                <div class="text-right sm:pt-5">
-                    <span class="block text-[10px] uppercase font-bold text-slate-400">Selecionados</span>
+                <div class="text-right sm:pt-1">
+                    <span class="block text-[10px] uppercase font-bold text-slate-400">Selecionados (<span id="invoiceSelectedCount">0</span>)</span>
                     <strong id="invoiceSelectedTotal" class="text-base text-indigo-700 tabular">R$ 0,00</strong>
+                    <span id="invoicePdfTotal" class="block text-[11px] text-slate-500"></span>
                 </div>
             </div>
 
@@ -1240,11 +1249,13 @@
                     <thead class="sticky top-0 bg-slate-50 z-10">
                         <tr class="text-slate-500 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-200">
                             <th class="py-2.5 px-3 w-8"></th>
-                            <th class="py-2.5 px-2 w-24">Data</th>
-                            <th class="py-2.5 px-2">Descrição</th>
-                            <th class="py-2.5 px-2 w-28">Valor (R$)</th>
-                            <th class="py-2.5 px-2 w-44">Categoria</th>
-                            <th class="py-2.5 px-2 w-32">Responsável</th>
+                            <th class="py-2.5 px-2 w-32">Data</th>
+                            <th class="py-2.5 px-2 min-w-[180px]">Descrição</th>
+                            <th class="py-2.5 px-2 w-24">Valor (R$)</th>
+                            <th class="py-2.5 px-2 w-40">Categoria</th>
+                            <th class="py-2.5 px-2 w-48">Tipo</th>
+                            <th class="py-2.5 px-2 w-36">Responsável</th>
+                            <th class="py-2.5 px-2 w-20"></th>
                         </tr>
                     </thead>
                     <tbody id="invoiceRowsBody" class="divide-y divide-slate-100"></tbody>
@@ -2683,9 +2694,12 @@
             return shiftIsoDate(baseDate, offset);
         }
 
+        // Cria as ocorrências de um lançamento (1 para à vista; N meses para parcelado/recorrente).
+        // Retorna os itens criados.
         function addExpenseSeries(fields, paymentType, amounts, count, startDate) {
             const seriesId = count > 1 ? newId('series') : null;
             const bucket = fields.bucket || (CATEGORIES[fields.category] || CATEGORIES.outros).bucket;
+            const created = [];
             getMonthKeysFrom(startDate, count).forEach((mk, idx) => {
                 const item = Object.assign({}, fields, {
                     id: newId('exp'),
@@ -2704,7 +2718,9 @@
                     item.installmentTotal = count;
                 }
                 state.expenses.push(item);
+                created.push(item);
             });
+            return created;
         }
 
         function addIncomeSeries(fields, count, startDate) {
@@ -2783,7 +2799,7 @@
         }
 
         function updateAmountLabel() {
-            const isEditing = !!document.getElementById('editingExpenseId').value;
+            const isEditing = !!document.getElementById('editingExpenseId').value || invoiceEditIdx !== null;
             const type = document.getElementById('expPaymentType').value;
             let label = 'Valor Total (R$)';
             if (type === 'cartao_parcelado') label = isEditing ? 'Valor da Parcela (R$)' : 'Valor Total da Compra (R$)';
@@ -2798,6 +2814,7 @@
         }
 
         function openAddExpenseModalWithGroup(group) {
+            resetExpenseModalImportMode();
             document.getElementById('expenseForm').reset();
             document.getElementById('editingExpenseId').value = '';
             document.getElementById('expGroup').value = group;
@@ -2822,6 +2839,7 @@
         function openEditExpenseModal(id) {
             const item = state.expenses.find(x => x.id === id);
             if (!item) return;
+            resetExpenseModalImportMode();
 
             document.getElementById('editingExpenseId').value = item.id;
             document.getElementById('expGroup').value = item.expenseGroup || 'fixa';
@@ -2865,11 +2883,13 @@
 
         function closeAddExpenseModal() {
             document.getElementById('expenseModal').classList.add('hidden');
+            resetExpenseModalImportMode();
         }
 
         function toggleGroupFields() {
             const group = document.getElementById('expGroup').value;
-            document.getElementById('cardNameContainer').classList.toggle('hidden', group !== 'cartao');
+            // Na importação de fatura o cartão vem da própria tela de importação
+            document.getElementById('cardNameContainer').classList.toggle('hidden', group !== 'cartao' || invoiceEditIdx !== null);
             const dayLabels = { fixa: 'Data do vencimento', variavel: 'Data do pagamento', cartao: 'Data da compra' };
             document.getElementById('expDayLabel').textContent = dayLabels[group] || 'Data';
             document.getElementById('expDateHint').textContent = group === 'cartao'
@@ -2909,6 +2929,10 @@
                 : (inSeries && item.paymentType === 'cartao_parcelado'
                     ? 'Mude o número para aumentar ou reduzir as parcelas desta compra.'
                     : 'Serão criadas as parcelas seguintes, cada uma com o valor informado.');
+            if (invoiceEditIdx !== null) {
+                document.getElementById('installmentHint').textContent =
+                    'O valor informado é o de cada parcela. Serão lançadas da parcela atual até a última, uma por mês (a atual nesta fatura). Na divisão, informe a parte de cada pessoa em cada parcela.';
+            }
             document.getElementById('recurringMonthsLabel').textContent = item ? 'Duração total (meses)' : 'Estender para quantos meses?';
             document.getElementById('recurringMonthsHint').textContent = !item
                 ? 'Ex: 12 = 1 ano, 60 = 5 anos, 120 = 10 anos.'
@@ -3047,6 +3071,13 @@
         // Submissão do Formulário de Gastos
         async function handleExpenseSubmit(event) {
             event.preventDefault();
+            // Aberto por "Mais opções" na importação de fatura: só guarda as escolhas no item
+            if (invoiceEditIdx !== null) {
+                if (!applyInvoiceRowDetails()) return;
+                closeAddExpenseModal();
+                renderInvoiceRows();
+                return;
+            }
             const editingId = document.getElementById('editingExpenseId').value;
             const expenseGroup = document.getElementById('expGroup').value;
             const ownerMode = document.getElementById('expOwnerSelect').value;   // EU | Outro | Pagar
@@ -3811,11 +3842,13 @@
             const consolidationContainer = document.getElementById('cardConsolidationContainer');
 
             const cardTotals = {};
+            const cardMineTotals = {};
             let totalInvoice = 0;
             cardList.forEach(item => {
                 totalInvoice += item.amount;
                 const cName = (item.cardName || 'Principal').trim();
                 cardTotals[cName] = (cardTotals[cName] || 0) + item.amount;
+                if (isMine(item)) cardMineTotals[cName] = (cardMineTotals[cName] || 0) + item.amount;
             });
             document.getElementById('totalCardExpenses').textContent = formatMoney(totalInvoice);
             const cardMine = cardList.filter(isMine).reduce((s, e) => s + e.amount, 0);
@@ -3825,17 +3858,28 @@
 
             consolidationContainer.innerHTML = cardList.length === 0
                 ? '<div class="col-span-full py-4 text-center text-xs text-slate-400">Nenhum cartão cadastrado neste mês.</div>'
-                : Object.keys(cardTotals).map(cardName => `
-                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                : Object.keys(cardTotals).map(cardName => {
+                    const total = cardTotals[cardName];
+                    const mine = cardMineTotals[cardName] || 0;
+                    // Balão (passar o mouse ou tocar no cartão): quanto é meu e quanto é de terceiros
+                    return `
+                    <div class="relative group bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between cursor-help outline-none focus:border-indigo-300" tabindex="0">
                         <div class="flex items-center space-x-2.5">
                             <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="credit-card" class="w-4 h-4"></i></div>
                             <div>
-                                <span class="text-xs font-bold text-slate-900 block">${escapeHtml(cardName)}</span>
+                                <span class="text-xs font-bold text-slate-900 block underline decoration-dotted underline-offset-4">${escapeHtml(cardName)}</span>
                                 <span class="text-[10px] text-slate-400">Total da Fatura</span>
                             </div>
                         </div>
-                        <span class="text-sm font-bold text-indigo-600 tabular">${formatMoney(cardTotals[cardName])}</span>
-                    </div>`).join('');
+                        <span class="text-sm font-bold text-indigo-600 tabular">${formatMoney(total)}</span>
+                        <div class="hidden group-hover:block group-focus:block absolute left-3 top-full mt-1 z-30 w-60 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl space-y-1.5">
+                            <div class="font-bold">${escapeHtml(cardName)}</div>
+                            <div class="flex justify-between"><span class="text-slate-300">Meu (EU)</span><strong class="tabular">${formatMoney(mine)}</strong></div>
+                            <div class="flex justify-between"><span class="text-slate-300">De terceiros</span><strong class="tabular">${formatMoney(total - mine)}</strong></div>
+                            <div class="flex justify-between border-t border-white/20 pt-1.5"><span class="text-slate-300">Total da fatura</span><strong class="tabular">${formatMoney(total)}</strong></div>
+                        </div>
+                    </div>`;
+                }).join('');
 
             const shown = applyBlockFilter(cardList, 'cartao', 'emptyCardExpenses', 'Nenhum gasto de cartão de crédito registrado neste mês.');
 
@@ -5118,13 +5162,20 @@
         const PT_MONTHS = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
         const INVOICE_SKIP = /^(pagamento|pgto|saldo|total|subtotal|limite|vencimento|fatura|pagamentos|valor m[ií]nimo|melhor data|data de)/i;
 
+        // Seções de "próximas faturas" (parcelas futuras listadas na fatura atual): não entram por padrão
+        const INVOICE_FUTURE_SECTION = /pr[oó]ximas faturas|lan[cç]amentos futuros|compras parceladas.{0,5}pr[oó]xim|parcelas a vencer|demais faturas/i;
+        const INVOICE_CURRENT_SECTION = /lan[cç]amentos atuais|lan[cç]amentos: compras|lan[cç]amentos nacionais|lan[cç]amentos internacionais|despesas do m[eê]s/i;
+
         // Reconhece "dd/mm [aaaa] descrição valor" (também "dd MMM"); várias por linha (faturas em 2 colunas)
         function parseInvoiceLines(lines, monthKey) {
             const invYear = +monthKey.slice(0, 4);
             const invMonth = +monthKey.slice(5, 7);
             const re = /(?:^|\s)(\d{1,2})[\/\s.-](\d{1,2}|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:[\/.-](\d{2,4}))?\s+(.+?)\s+(-\s*)?(?:R\$\s*)?(-\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})(\s*-(?!\d)|\s+C(?=\s|$))?/gi;
             const found = [];
+            let inFutureSection = false;
             lines.forEach(line => {
+                if (INVOICE_FUTURE_SECTION.test(line)) inFutureSection = true;
+                else if (INVOICE_CURRENT_SECTION.test(line)) inFutureSection = false;
                 let m;
                 re.lastIndex = 0;
                 while ((m = re.exec(line)) !== null) {
@@ -5137,10 +5188,35 @@
                     const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const value = parseFloat(m[7].replace(/\./g, '').replace(',', '.'));
                     const negative = !!(m[5] || m[6] || m[8]);
-                    found.push({ date: isValidIsoDate(iso) ? iso : '', desc, amount: negative ? -value : value });
+                    found.push(Object.assign({ date: isValidIsoDate(iso) ? iso : '', amount: negative ? -value : value, future: inFutureSection },
+                        splitInstallmentFromDesc(desc)));
                 }
             });
             return found;
+        }
+
+        // "ZEISS RECREIO 06/12", "BANDEIRANTES COMER02/03", "LOJA PARC 3/10" -> parcela 6 de 12
+        function splitInstallmentFromDesc(desc) {
+            const m = desc.match(/^(.*?)(?:\s*-?\s*parc(?:ela)?\.?)?\s*(\d{1,2})\s*(?:\/|de)\s*(\d{1,2})$/i);
+            if (m) {
+                const cur = +m[2];
+                const total = +m[3];
+                if (total >= 2 && cur >= 1 && cur <= total && total <= 120 && m[1].trim().length >= 2) {
+                    return { desc: m[1].replace(/[\s*-]+$/, '').trim(), paymentType: 'cartao_parcelado', instCurrent: cur, instTotal: total };
+                }
+            }
+            return { desc, paymentType: 'pontual', instCurrent: 1, instTotal: 2 };
+        }
+
+        // Total da fatura escrito no PDF (para conferir com o total selecionado)
+        function findInvoiceTotal(lines) {
+            const re = /total (?:desta|da|a pagar|dessa)?\s*(?:fatura)?[^\d-]{0,40}?(?:R\$\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})/i;
+            for (const line of lines) {
+                if (!/total/i.test(line) || /anterior|m[ií]nimo|pagamentos?\b|cr[eé]dito/i.test(line)) continue;
+                const m = line.match(re);
+                if (m) return parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+            }
+            return null;
         }
 
         // Sugestão de categoria pelo nome do estabelecimento
@@ -5189,19 +5265,32 @@
                 invoiceRows = parsed.map(r => {
                     const dup = existing.find(e => Math.abs(e.amount - r.amount) < 0.005 &&
                         (normalizeText(displayDesc(e)).includes(normalizeText(r.desc)) || normalizeText(r.desc).includes(normalizeText(e.desc))));
+                    const category = guessCategory(r.desc);
                     return Object.assign(r, {
-                        checked: r.amount > 0 && !dup,
-                        note: dup ? 'Parece já lançado neste mês' : (r.amount < 0 ? 'Valor negativo (estorno/crédito)' : ''),
-                        category: guessCategory(r.desc),
-                        owner: 'EU'
+                        checked: r.amount > 0 && !dup && !r.future,
+                        note: r.future ? 'Seção "próximas faturas" (parcela futura)'
+                            : dup ? 'Parece já lançado neste mês'
+                            : (r.amount < 0 ? 'Valor negativo (estorno/crédito)' : ''),
+                        category,
+                        bucket: CATEGORIES[category].bucket,
+                        recMonths: 12,
+                        ownerMode: 'EU', personName: '', personEmail: '',
+                        isProjection: false,
+                        split: []      // [{ name, amount, email }] — divisão com outras pessoas
                     });
                 });
                 const lastCard = existing.length ? existing[existing.length - 1].cardName : '';
                 document.getElementById('invoiceCardName').value = detectCardName(lines.join(' ')) || lastCard || 'Nubank';
                 document.getElementById('invoiceMonthLabel').textContent = monthLabel(state.currentDate);
+                const pdfTotal = findInvoiceTotal(lines);
+                document.getElementById('invoicePdfTotal').textContent = pdfTotal ? `Total escrito no PDF: ${formatMoney(pdfTotal)}` : '';
+                const futureCount = invoiceRows.filter(r => r.future).length;
+                const parcCount = invoiceRows.filter(r => r.paymentType === 'cartao_parcelado').length;
                 document.getElementById('invoiceInfo').textContent =
-                    `Encontramos ${invoiceRows.length} lançamento(s). Confira, ajuste o que precisar e desmarque o que não quiser lançar. ` +
-                    'Os itens entram como compras à vista na fatura do mês selecionado (parcelas aparecem com o número na descrição).';
+                    `Encontramos ${invoiceRows.length} lançamento(s)` +
+                    (parcCount ? `, ${parcCount} parcelado(s) (as parcelas restantes serão criadas nos próximos meses)` : '') +
+                    (futureCount ? `. ${futureCount} item(ns) da seção "próximas faturas" ficaram desmarcados` : '') +
+                    '. Confira, ajuste e use "Mais opções" para dividir com outras pessoas, "devo a", projeção etc.';
                 renderInvoiceRows();
                 document.getElementById('invoiceModal').classList.remove('hidden');
                 lucide.createIcons();
@@ -5211,55 +5300,110 @@
             }
         }
 
+        // Resumo das opções extras do item (divisão, devo a, cobrar de, projeção)
+        function invoiceRowExtras(r) {
+            const tags = [];
+            if (r.ownerMode === 'Outro') tags.push(`Cobrar de ${r.personName}`);
+            if (r.ownerMode === 'Pagar') tags.push(`Devo a ${r.personName}`);
+            if (r.split.length) tags.push(`Dividido com ${r.split.map(s => s.name).join(', ')}`);
+            if (r.isProjection) tags.push('Projeção');
+            if (r.bucket !== (CATEGORIES[r.category] || CATEGORIES.outros).bucket) tags.push(BUCKETS[r.bucket].label);
+            return tags;
+        }
+
+        // A tabela é ligada ao modelo (invoiceRows): cada campo editado atualiza o item na hora
         function renderInvoiceRows() {
             const inputCls = 'w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-800 outline-none focus:border-indigo-500';
+            const smallCls = 'w-12 bg-white border border-slate-200 rounded-lg px-1 py-1.5 text-slate-800 outline-none focus:border-indigo-500 text-center';
             const options = categoryOptionsHtml();
-            document.getElementById('invoiceRowsBody').innerHTML = invoiceRows.map((r, idx) => `
-                <tr class="${r.checked ? '' : 'opacity-60'}" data-idx="${idx}">
-                    <td class="py-2 px-3"><input type="checkbox" class="inv-check w-4 h-4 text-indigo-600" ${r.checked ? 'checked' : ''}></td>
-                    <td class="py-2 px-2"><input type="date" class="inv-date ${inputCls}" value="${r.date}"></td>
+            document.getElementById('invoiceRowsBody').innerHTML = invoiceRows.map((r, idx) => {
+                const extras = invoiceRowExtras(r);
+                const typeExtra = r.paymentType === 'cartao_parcelado'
+                    ? `<div class="flex items-center gap-1 mt-1 text-[11px] text-slate-500">parcela
+                           <input type="number" min="1" max="120" data-field="instCurrent" class="${smallCls}" value="${r.instCurrent}">
+                           de <input type="number" min="2" max="120" data-field="instTotal" class="${smallCls}" value="${r.instTotal}"></div>`
+                    : r.paymentType === 'recorrente'
+                        ? `<div class="flex items-center gap-1 mt-1 text-[11px] text-slate-500">por
+                               <input type="number" min="2" max="600" data-field="recMonths" class="${smallCls}" value="${r.recMonths}"> meses</div>`
+                        : '';
+                const owner = r.ownerMode === 'EU' ? 'EU' : r.personName;
+                return `
+                <tr class="${r.checked ? '' : 'opacity-60'} align-top" data-idx="${idx}">
+                    <td class="py-2 px-3"><input type="checkbox" data-field="checked" class="w-4 h-4 text-indigo-600 mt-2" ${r.checked ? 'checked' : ''}></td>
+                    <td class="py-2 px-2"><input type="date" data-field="date" class="${inputCls}" value="${r.date}"></td>
                     <td class="py-2 px-2">
-                        <input type="text" class="inv-desc ${inputCls}" value="${escapeHtml(r.desc)}">
+                        <input type="text" data-field="desc" class="${inputCls}" value="${escapeHtml(r.desc)}">
                         ${r.note ? `<span class="block text-[10px] text-amber-700 mt-0.5">${escapeHtml(r.note)}</span>` : ''}
+                        ${extras.length ? `<div class="flex flex-wrap gap-1 mt-1">${extras.map(t => `<span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded text-[10px] font-semibold">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
                     </td>
-                    <td class="py-2 px-2"><input type="number" step="0.01" class="inv-amount ${inputCls} tabular" value="${r.amount.toFixed(2)}"></td>
-                    <td class="py-2 px-2"><select class="inv-cat ${inputCls}">${options}</select></td>
-                    <td class="py-2 px-2"><input type="text" class="inv-owner ${inputCls}" value="${escapeHtml(r.owner)}" title="EU ou o nome de quem vai te reembolsar"></td>
-                </tr>`).join('');
+                    <td class="py-2 px-2"><input type="number" step="0.01" data-field="amount" class="${inputCls} tabular" value="${Number(r.amount).toFixed(2)}"></td>
+                    <td class="py-2 px-2"><select data-field="category" class="${inputCls}">${options}</select></td>
+                    <td class="py-2 px-2">
+                        <select data-field="paymentType" class="${inputCls}">
+                            <option value="pontual">À vista</option>
+                            <option value="cartao_parcelado">Parcelado</option>
+                            <option value="recorrente">Recorrente</option>
+                        </select>
+                        ${typeExtra}
+                    </td>
+                    <td class="py-2 px-2">
+                        <input type="text" data-field="owner" class="${inputCls}" value="${escapeHtml(owner)}" ${r.ownerMode === 'Pagar' ? 'disabled' : ''} title="EU ou o nome de quem vai te reembolsar">
+                    </td>
+                    <td class="py-2 px-2">
+                        <button type="button" onclick="openInvoiceRowDetails(${idx})" class="w-full px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-medium whitespace-nowrap" title="Dividir com outras pessoas, devo a, projeção, grupo 50/30/20...">Mais opções</button>
+                    </td>
+                </tr>`;
+            }).join('');
             document.querySelectorAll('#invoiceRowsBody tr').forEach(tr => {
                 const r = invoiceRows[+tr.dataset.idx];
-                tr.querySelector('.inv-cat').value = CATEGORIES[r.category] ? r.category : 'outros';
-                tr.querySelector('.inv-check').addEventListener('change', e => {
-                    tr.classList.toggle('opacity-60', !e.target.checked);
-                    updateInvoiceTotal();
-                });
-                tr.querySelector('.inv-amount').addEventListener('input', updateInvoiceTotal);
+                tr.querySelector('[data-field="category"]').value = CATEGORIES[r.category] ? r.category : 'outros';
+                tr.querySelector('[data-field="paymentType"]').value = r.paymentType;
             });
             updateInvoiceTotal();
+            lucide.createIcons();
         }
 
-        function readInvoiceRows() {
-            return [...document.querySelectorAll('#invoiceRowsBody tr')].map(tr => ({
-                checked: tr.querySelector('.inv-check').checked,
-                date: tr.querySelector('.inv-date').value,
-                desc: tr.querySelector('.inv-desc').value.trim(),
-                amount: parseFloat(tr.querySelector('.inv-amount').value),
-                category: tr.querySelector('.inv-cat').value,
-                owner: tr.querySelector('.inv-owner').value.trim() || 'EU'
-            }));
+        // Um único "ouvinte" para todos os campos da tabela de importação
+        function onInvoiceFieldChange(e) {
+            const el = e.target;
+            const field = el.dataset && el.dataset.field;
+            const tr = el.closest('tr[data-idx]');
+            if (!field || !tr) return;
+            const r = invoiceRows[+tr.dataset.idx];
+            if (!r) return;
+            if (field === 'checked') {
+                r.checked = el.checked;
+                tr.classList.toggle('opacity-60', !el.checked);
+            } else if (field === 'amount') {
+                r.amount = parseFloat(el.value);
+            } else if (['instCurrent', 'instTotal', 'recMonths'].includes(field)) {
+                r[field] = parseInt(el.value) || r[field];
+            } else if (field === 'category') {
+                r.category = el.value;
+                r.bucket = (CATEGORIES[el.value] || CATEGORIES.outros).bucket;
+            } else if (field === 'owner') {
+                const v = el.value.trim();
+                if (!v || normalizeText(v) === 'eu') { r.ownerMode = 'EU'; r.personName = ''; }
+                else { r.ownerMode = 'Outro'; r.personName = v; r.personEmail = contactEmailFor(v) || r.personEmail; }
+            } else {
+                r[field] = el.value;
+            }
+            if (field === 'paymentType' || field === 'owner') renderInvoiceRows(); else updateInvoiceTotal();
         }
+        document.getElementById('invoiceRowsBody').addEventListener('change', onInvoiceFieldChange);
+        document.getElementById('invoiceRowsBody').addEventListener('input', e => {
+            if (e.target.dataset && ['amount', 'desc'].includes(e.target.dataset.field)) onInvoiceFieldChange(e);
+        });
 
         function updateInvoiceTotal() {
-            const total = readInvoiceRows().filter(r => r.checked && !isNaN(r.amount)).reduce((s, r) => s + r.amount, 0);
-            document.getElementById('invoiceSelectedTotal').textContent = formatMoney(total);
+            const selected = invoiceRows.filter(r => r.checked && !isNaN(r.amount));
+            document.getElementById('invoiceSelectedTotal').textContent = formatMoney(selected.reduce((s, r) => s + r.amount, 0));
+            document.getElementById('invoiceSelectedCount').textContent = selected.length;
         }
 
         function setAllInvoiceRows(checked) {
-            document.querySelectorAll('#invoiceRowsBody .inv-check').forEach(c => {
-                c.checked = checked;
-                c.closest('tr').classList.toggle('opacity-60', !checked);
-            });
-            updateInvoiceTotal();
+            invoiceRows.forEach(r => { r.checked = checked; });
+            renderInvoiceRows();
         }
 
         function closeInvoiceModal() {
@@ -5267,32 +5411,147 @@
             invoiceRows = [];
         }
 
-        function confirmInvoiceImport() {
+        // ---- "Mais opções": usa o mesmo formulário do lançamento manual para um item da fatura ----
+        let invoiceEditIdx = null;
+
+        function openInvoiceRowDetails(idx) {
+            const r = invoiceRows[idx];
+            if (!r) return;
+            openAddExpenseModalWithGroup('cartao');
+            invoiceEditIdx = idx;
+            document.getElementById('expenseModal').style.zIndex = '60';
+            document.getElementById('expGroup').disabled = true;
+            document.getElementById('cardNameContainer').classList.add('hidden');
+            document.getElementById('installmentCurrentContainer').classList.remove('hidden');
+            document.getElementById('installmentTotalWrap').classList.remove('col-span-2');
+            document.getElementById('expenseModalTitle').innerHTML = '<i data-lucide="file-up" class="w-5 h-5 text-indigo-600"></i><span>Item da fatura</span>';
+            document.getElementById('expenseSubmitBtn').textContent = 'Aplicar ao item';
+
+            document.getElementById('expDesc').value = r.desc;
+            document.getElementById('expAmount').value = Number(r.amount).toFixed(2);
+            document.getElementById('expDate').value = r.date || '';
+            document.getElementById('expCategory').value = CATEGORIES[r.category] ? r.category : 'outros';
+            document.getElementById('expBucket').value = r.bucket;
+            document.getElementById('expPaymentType').value = r.paymentType;
+            document.getElementById('expInstallmentCurrent').value = r.instCurrent;
+            document.getElementById('expInstallments').value = r.instTotal;
+            document.getElementById('expRecurringMonths').value = r.recMonths;
+            document.getElementById('expIsProjection').checked = !!r.isProjection;
+            document.getElementById('expOwnerSelect').value = r.ownerMode;
+            document.getElementById('expCustomOwner').value = r.personName;
+            document.getElementById('expCustomOwnerEmail').value = r.personEmail || contactEmailFor(r.personName) || '';
+            document.getElementById('expSplitToggle').checked = r.split.length > 0;
+            document.getElementById('splitRows').innerHTML = '';
+            if (r.split.length) r.split.forEach(s => addSplitRow(s.name, s.amount, s.email)); else addSplitRow();
+            checkCustomOwner();
+            toggleGroupFields();
+            toggleSplitFields();
+            lucide.createIcons();
+        }
+
+        // Volta o formulário de lançamento ao modo normal
+        function resetExpenseModalImportMode() {
+            invoiceEditIdx = null;
+            document.getElementById('expenseModal').style.zIndex = '';
+            document.getElementById('expGroup').disabled = false;
+            document.getElementById('installmentCurrentContainer').classList.add('hidden');
+            document.getElementById('installmentTotalWrap').classList.add('col-span-2');
+        }
+
+        // Salva no item da fatura o que foi escolhido no formulário (ainda não lança nada)
+        function applyInvoiceRowDetails() {
+            const r = invoiceRows[invoiceEditIdx];
+            if (!r) return true;
+            const ownerMode = document.getElementById('expOwnerSelect').value;
+            const personName = document.getElementById('expCustomOwner').value.trim();
+            const amount = parseFloat(document.getElementById('expAmount').value);
+            if (ownerMode !== 'EU' && !personName) { alert('Informe o nome da pessoa.'); return false; }
+            if (isNaN(amount)) { alert('Informe um valor válido.'); return false; }
+            const isSplit = document.getElementById('expSplitToggle').checked;
+            const split = isSplit ? readSplitRows().filter(p => p.name || p.amount > 0) : [];
+            if (split.some(p => !p.name)) { alert('Informe o nome de cada pessoa da divisão (ou remova a linha vazia).'); return false; }
+            if (split.reduce((s, p) => s + p.amount, 0) > amount + 0.001) { alert('A soma das partes das outras pessoas não pode ser maior que o valor do item.'); return false; }
+            const instTotal = Math.max(2, parseInt(document.getElementById('expInstallments').value) || 2);
+            Object.assign(r, {
+                desc: document.getElementById('expDesc').value.trim() || r.desc,
+                amount,
+                date: document.getElementById('expDate').value,
+                category: document.getElementById('expCategory').value,
+                bucket: document.getElementById('expBucket').value,
+                paymentType: document.getElementById('expPaymentType').value,
+                instTotal,
+                instCurrent: Math.min(instTotal, Math.max(1, parseInt(document.getElementById('expInstallmentCurrent').value) || 1)),
+                recMonths: Math.max(2, parseInt(document.getElementById('expRecurringMonths').value) || 12),
+                isProjection: document.getElementById('expIsProjection').checked,
+                ownerMode, personName: ownerMode === 'EU' ? '' : personName,
+                personEmail: ownerMode === 'EU' ? '' : document.getElementById('expCustomOwnerEmail').value.trim(),
+                split,
+                checked: true
+            });
+            return true;
+        }
+
+        // Lança os itens selecionados com as mesmas regras do lançamento manual.
+        // Parcelado: o valor do item é a parcela; cria da parcela atual até a última (uma por mês).
+        async function confirmInvoiceImport() {
             const cardName = document.getElementById('invoiceCardName').value.trim() || 'Cartão';
-            const rows = readInvoiceRows().filter(r => r.checked);
+            const rows = invoiceRows.filter(r => r.checked);
             if (!rows.length) {
                 alert('Nenhum lançamento selecionado.');
                 return;
             }
-            const invalid = rows.find(r => !r.desc || isNaN(r.amount));
+            const invalid = rows.find(r => !String(r.desc).trim() || isNaN(r.amount));
             if (invalid) {
                 alert('Há um lançamento selecionado sem descrição ou com valor inválido.');
                 return;
             }
+
+            // Vincula os e-mails informados (cobrança/aviso direto para quem tem cadastro)
+            const pairs = [];
+            rows.forEach(r => {
+                if (r.ownerMode !== 'EU' && r.personEmail) pairs.push({ name: r.personName, email: r.personEmail });
+                r.split.forEach(s => { if (s.email) pairs.push({ name: s.name, email: s.email }); });
+            });
+            if (pairs.length && !(await verifyAndSaveContacts(pairs))) return;
+
+            let created = 0;
             rows.forEach(r => {
                 const date = isValidIsoDate(r.date) ? r.date : null;
-                addExpenseSeries({
-                    expenseGroup: 'cartao', category: r.category,
-                    bucket: (CATEGORIES[r.category] || CATEGORIES.outros).bucket,
-                    cardName, date, day: date ? Number(date.slice(8, 10)) : null,
-                    desc: r.desc, owner: normalizeText(r.owner) === 'eu' ? 'EU' : r.owner,
-                    splitNote: 'Importado da fatura', isProjection: false
-                }, 'pontual', [Math.round(r.amount * 100) / 100], 1, state.currentDate);
+                const common = {
+                    expenseGroup: 'cartao', category: r.category, bucket: r.bucket, cardName,
+                    date, day: date ? Number(date.slice(8, 10)) : null, isProjection: !!r.isProjection
+                };
+                const amount = Math.round(r.amount * 100) / 100;
+                const owner = r.ownerMode === 'Outro' ? r.personName : 'EU';
+                const payTo = r.ownerMode === 'Pagar' ? r.personName : '';
+                let parts = [{ owner, payTo, desc: r.desc, total: amount, splitNote: 'Importado da fatura' }];
+                if (r.split.length) {
+                    const others = r.split.reduce((s, p) => s + p.amount, 0);
+                    const names = r.split.map(p => p.name).join(', ');
+                    parts = [{ owner: 'EU', payTo: '', desc: `${r.desc} (Minha parte)`, total: Math.round((amount - others) * 100) / 100, splitNote: `Dividido com ${names}` }]
+                        .concat(r.split.map(p => ({ owner: p.name, payTo: '', desc: `${r.desc} (Parte de ${p.name})`, total: p.amount, splitNote: `Reembolso de ${p.name}` })));
+                }
+
+                parts.forEach(p => {
+                    if (!p.total) return;
+                    const fields = Object.assign({}, common, { owner: p.owner, payTo: p.payTo, desc: p.desc, splitNote: p.splitNote });
+                    if (r.paymentType === 'cartao_parcelado') {
+                        const total = Math.max(2, r.instTotal);
+                        const current = Math.min(total, Math.max(1, r.instCurrent));
+                        const items = addExpenseSeries(fields, 'cartao_parcelado', [p.total], total - current + 1, state.currentDate);
+                        items.forEach((it, i) => { it.installmentIndex = current + i; it.installmentTotal = total; });
+                    } else if (r.paymentType === 'recorrente') {
+                        addExpenseSeries(fields, 'recorrente', [p.total], Math.max(2, r.recMonths), state.currentDate);
+                    } else {
+                        addExpenseSeries(fields, 'pontual', [p.total], 1, state.currentDate);
+                    }
+                    created++;
+                });
             });
             saveStateToStorage();
             closeInvoiceModal();
             calculateAndRender();
-            showToast(`${rows.length} lançamento(s) importado(s) da fatura ${cardName}.`);
+            showToast(`${rows.length} item(ns) importado(s) da fatura ${cardName} (${created} lançamento(s), incluindo divisões).`);
         }
 
         // ===================== Importação / Restauração de backup =====================

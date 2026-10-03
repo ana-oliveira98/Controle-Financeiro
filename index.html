@@ -912,7 +912,7 @@
                         <span id="totalCardExpenses" class="text-base font-bold text-indigo-600 underline decoration-dotted underline-offset-4">R$ 0,00</span>
                         <div class="hidden group-hover:block group-focus:block absolute right-0 top-full mt-2 z-30 w-60 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl text-left space-y-1.5">
                             <div class="flex justify-between"><span class="text-slate-300">Meu (EU)</span><strong id="cardTipMine" class="tabular">R$ 0,00</strong></div>
-                            <div class="flex justify-between"><span class="text-slate-300">De terceiros</span><strong id="cardTipOthers" class="tabular">R$ 0,00</strong></div>
+                            <div id="cardTipOthers" class="space-y-1.5"></div>
                             <div class="flex justify-between border-t border-white/20 pt-1.5"><span class="text-slate-300">Total da fatura</span><strong id="cardTipTotal" class="tabular">R$ 0,00</strong></div>
                         </div>
                     </div>
@@ -3843,17 +3843,31 @@
 
             const cardTotals = {};
             const cardMineTotals = {};
+            const cardPeople = {};   // cartão -> { pessoa -> valor }
             let totalInvoice = 0;
             cardList.forEach(item => {
                 totalInvoice += item.amount;
                 const cName = (item.cardName || 'Principal').trim();
                 cardTotals[cName] = (cardTotals[cName] || 0) + item.amount;
-                if (isMine(item)) cardMineTotals[cName] = (cardMineTotals[cName] || 0) + item.amount;
+                if (isMine(item)) {
+                    cardMineTotals[cName] = (cardMineTotals[cName] || 0) + item.amount;
+                } else {
+                    cardPeople[cName] = cardPeople[cName] || {};
+                    cardPeople[cName][item.owner] = (cardPeople[cName][item.owner] || 0) + item.amount;
+                }
             });
+
+            // Uma linha por pessoa (maior valor primeiro) em vez de "De terceiros"
+            const peopleRows = people => Object.entries(people || {}).sort((a, b) => b[1] - a[1])
+                .map(([name, value]) => `<div class="flex justify-between gap-3"><span class="text-slate-300 truncate">${escapeHtml(name)}</span><strong class="tabular whitespace-nowrap">${formatMoney(value)}</strong></div>`)
+                .join('');
+            const allPeople = {};
+            Object.values(cardPeople).forEach(p => Object.entries(p).forEach(([name, v]) => { allPeople[name] = (allPeople[name] || 0) + v; }));
+
             document.getElementById('totalCardExpenses').textContent = formatMoney(totalInvoice);
             const cardMine = cardList.filter(isMine).reduce((s, e) => s + e.amount, 0);
             document.getElementById('cardTipMine').textContent = formatMoney(cardMine);
-            document.getElementById('cardTipOthers').textContent = formatMoney(totalInvoice - cardMine);
+            document.getElementById('cardTipOthers').innerHTML = peopleRows(allPeople);
             document.getElementById('cardTipTotal').textContent = formatMoney(totalInvoice);
 
             consolidationContainer.innerHTML = cardList.length === 0
@@ -3875,7 +3889,7 @@
                         <div class="hidden group-hover:block group-focus:block absolute left-3 top-full mt-1 z-30 w-60 bg-slate-900 text-white text-xs rounded-xl p-3 shadow-xl space-y-1.5">
                             <div class="font-bold">${escapeHtml(cardName)}</div>
                             <div class="flex justify-between"><span class="text-slate-300">Meu (EU)</span><strong class="tabular">${formatMoney(mine)}</strong></div>
-                            <div class="flex justify-between"><span class="text-slate-300">De terceiros</span><strong class="tabular">${formatMoney(total - mine)}</strong></div>
+                            ${peopleRows(cardPeople[cardName])}
                             <div class="flex justify-between border-t border-white/20 pt-1.5"><span class="text-slate-300">Total da fatura</span><strong class="tabular">${formatMoney(total)}</strong></div>
                         </div>
                     </div>`;

@@ -72,6 +72,19 @@ Depois de publicar, peça para os usuários recarregarem com **Ctrl+F5**, para n
 | `usuarios/{email}` | Registro para saber se um e-mail tem cadastro | Qualquer usuário logado pode consultar **um** e-mail; ninguém pode listar |
 | `cobrancas/{id}` | Cobranças enviadas entre usuários | Quem cobrou e quem deve |
 | `acessos/{email}` | E-mails liberados para usar o sistema | Só a administradora vê e altera; cada pessoa só confere o próprio e-mail |
+| `config/categorias` | Categorias personalizadas | Todos com acesso leem; só a administradora altera |
+| `dividas/{id}` | Avisos "devo a" enviados por quem deve | Quem deve (cria e altera) e quem vai receber (confirma o recebimento) |
+
+## Funcionalidades principais
+
+- **Lançamentos:** data completa (dia/mês). Fora do cartão, a data define o mês do lançamento; no cartão, é a data da compra e o lançamento fica na fatura do mês selecionado. Há opção de "Projeção" (previsto) e de "EU devo a outra pessoa". A divisão pode ser feita com várias pessoas, e todos os campos são editáveis, inclusive tipo de pagamento e número de parcelas ou meses.
+- **Busca:** cada bloco da aba Lançamentos tem uma lupa que procura por descrição, categoria, pessoa, cartão, valor ou data.
+- **Fatura em PDF:** o botão "Importar fatura (PDF)", no bloco do cartão, lê o PDF no próprio navegador (o arquivo não é enviado a nenhum servidor) e mostra a lista para escolher o que lançar. O formato varia por banco; se um banco não for reconhecido, é preciso ajustar a leitura.
+- **Devo a:** se a pessoa a quem você deve tiver e-mail vinculado, ela recebe o aviso na aba Cobranças dela ("Te devem"), confirma quando receber e pode lançar o valor como receita (coleção `dividas`).
+- **Recebi:** cada gasto de terceiros tem a caixa "Recebi". O que não for confirmado aparece nos meses seguintes em vermelho, como "Pendente de [mês]". O controle começa no mês em que esta versão foi aberta pela primeira vez; o que é de antes é considerado acertado.
+- **Aba Pagamentos:** check das despesas fixas e das faturas dos cartões (valor total, incluindo terceiros), com vencimento, situação (em dia, vence em X dias ou atrasado) e a caixa "Pago". O dia de vencimento de cada cartão é informado na própria aba.
+- **Encontro de contas:** a aba Cobranças mostra, por pessoa e no mês selecionado, quanto ela te deve e quanto você deve a ela. O detalhe aparece ao passar o mouse sobre o nome.
+- **Categorias:** a administradora cria, edita e exclui categorias na aba Administração (coleção `config/categorias`), e elas valem para todos.
 
 ## Controle de acesso
 

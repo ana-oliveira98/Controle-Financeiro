@@ -38,6 +38,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Categorias personalizadas: todos com acesso leem; só a administradora altera
+    match /config/categorias {
+      allow read: if hasAccess();
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(['items', 'updatedAt'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 200
+        && request.resource.data.updatedAt is int;
+    }
+
     // Painel de cada usuário: só o próprio dono lê e grava
     match /paineis/{uid} {
       allow read, write: if hasAccess() && request.auth.uid == uid;
@@ -55,6 +65,56 @@ service cloud.firestore {
         && request.auth.token.email != null
         && myEmail() == email
         && request.resource.data.uid == request.auth.uid;
+    }
+
+    // "Devo a": avisos de dívida enviados por quem deve (debtor) para quem vai receber (creditor)
+    match /dividas/{id} {
+      function isDebtorAuthor(data) {
+        return request.auth.uid == data.debtorUid;
+      }
+      function isCreditorTarget(data) {
+        return request.auth.token.email != null && myEmail() == data.creditorEmail;
+      }
+      function isNum(v) {
+        return v is int || v is float;
+      }
+      // Formato obrigatório de um aviso gravado por quem deve
+      function validDivida(d) {
+        return d.keys().hasOnly(['debtorUid', 'debtorEmail', 'creditorEmail', 'creditorName', 'expenseId', 'seriesKey',
+                                 'desc', 'amount', 'monthKey', 'day', 'cancelled', 'status', 'receivedAt', 'updatedAt'])
+          && d.debtorUid == request.auth.uid
+          && d.debtorEmail == myEmail()
+          && d.creditorEmail is string && d.creditorEmail.size() <= 254 && d.creditorEmail.matches('[^@ ]+@[^@ ]+')
+          && d.creditorEmail != myEmail()
+          && d.creditorName is string && d.creditorName.size() <= 100
+          && d.expenseId is string && d.expenseId.size() <= 100
+          && d.seriesKey is string && d.seriesKey.size() <= 100
+          && d.desc is string && d.desc.size() <= 300
+          && d.monthKey is string && d.monthKey.matches('[0-9]{4}-(0[1-9]|1[0-2])')
+          && isNum(d.amount) && d.amount >= 0 && d.amount < 100000000
+          && (d.day == null || (d.day is int && d.day >= 1 && d.day <= 31))
+          && d.cancelled is bool
+          && d.status in ['pendente', 'recebida', 'arquivada'];
+      }
+
+      allow read: if isAdmin() || (hasAccess() && (isDebtorAuthor(resource.data) || isCreditorTarget(resource.data)));
+
+      allow create: if hasAccess()
+        && id.matches(request.auth.uid + '_[A-Za-z0-9_-]{1,100}')
+        && validDivida(request.resource.data)
+        && request.resource.data.status == 'pendente';
+
+      allow update: if hasAccess() && (
+        (isDebtorAuthor(resource.data) && validDivida(request.resource.data))
+        ||
+        // Quem vai receber só confirma o recebimento (ou arquiva)
+        (isCreditorTarget(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'receivedAt'])
+          && request.resource.data.status in ['pendente', 'recebida', 'arquivada']
+          && (request.resource.data.receivedAt == null || request.resource.data.receivedAt is int))
+      );
+
+      allow delete: if isAdmin() || (hasAccess() && isDebtorAuthor(resource.data));
     }
 
     // Cobranças entre usuários

@@ -3725,12 +3725,149 @@
         }
 
         function applyBlockFilter(list, block, emptyId, emptyText) {
-            const filtered = list.filter(x => matchesFilter(x, blockFilters[block]));
+            if (colFilters[block]) updateColumnFilterOptions(block, list);
+            const filtered = list.filter(x => matchesFilter(x, blockFilters[block]) && matchesColumnFilters(x, block));
             const empty = document.getElementById(emptyId);
-            empty.textContent = list.length && !filtered.length ? 'Nenhum lançamento encontrado para essa busca.' : emptyText;
+            empty.textContent = list.length && !filtered.length ? 'Nenhum lançamento encontrado para esse filtro.' : emptyText;
             empty.classList.toggle('hidden', filtered.length > 0);
+            if (colFilters[block]) updateColumnFilterStatus(block, filtered.length, list.length);
             return filtered;
         }
+
+        // ---- Filtros por coluna (linha abaixo dos títulos nos blocos Fixas, Variáveis e Cartão) ----
+        const PAYMENT_TYPE_LABELS = { pontual: 'À vista', cartao_parcelado: 'Parcelado', recorrente: 'Recorrente' };
+        const colFilters = {
+            fixa: { date: '', desc: '', category: '', owner: '', type: '', amount: '' },
+            variavel: { date: '', desc: '', category: '', owner: '', type: '', amount: '' },
+            cartao: { date: '', desc: '', card: '', category: '', owner: '', type: '', amount: '' }
+        };
+        // Colunas de cada bloco, na mesma ordem dos títulos da tabela
+        const COLUMN_FILTER_LAYOUT = {
+            fixa: ['date', 'desc', 'category', 'owner', 'type', 'amount', 'actions'],
+            variavel: ['date', 'desc', 'category', 'owner', 'type', 'amount', 'actions'],
+            cartao: ['date', 'desc', 'card', 'category', 'owner', 'type', 'amount', 'actions']
+        };
+        const COLUMN_FILTER_TBODY = { fixa: 'fixedExpensesTableBody', variavel: 'variableExpensesTableBody', cartao: 'cardExpensesTableBody' };
+
+        function ownerFilterKey(item) {
+            if (item.payTo) return 'pagar:' + item.payTo;
+            return isMine(item) ? 'EU' : item.owner;
+        }
+
+        // Valor: aceita "150", "150,50", ">100", "<50", ">=100", "100-200" (faixa)
+        function matchesAmountFilter(amount, expr) {
+            const s = String(expr).replace(/\s|R\$/g, '');
+            if (!s) return true;
+            const num = v => parseFloat(v.replace(/\./g, '').replace(',', '.'));
+            let m = s.match(/^(>=|<=|>|<)(-?[\d.,]+)$/);
+            if (m) {
+                const v = num(m[2]);
+                return m[1] === '>' ? amount > v : m[1] === '<' ? amount < v : m[1] === '>=' ? amount >= v : amount <= v;
+            }
+            m = s.match(/^([\d.,]+)-([\d.,]+)$/);
+            if (m) return amount >= num(m[1]) && amount <= num(m[2]);
+            return formatMoney(amount).replace(/\s/g, '').includes(s) || String(amount).replace('.', ',').includes(s);
+        }
+
+        function matchesColumnFilters(item, block) {
+            const f = colFilters[block];
+            if (!f) return true;
+            if (f.date && !normalizeText(formatDateBR(item)).includes(normalizeText(f.date))) return false;
+            if (f.desc && !normalizeText(displayDesc(item)).includes(normalizeText(f.desc))) return false;
+            if (f.card && (item.cardName || '') !== f.card) return false;
+            if (f.category && (CATEGORIES[item.category] ? item.category : 'outros') !== f.category) return false;
+            if (f.owner && ownerFilterKey(item) !== f.owner) return false;
+            if (f.type) {
+                if (f.type === 'projecao') { if (!item.isProjection) return false; }
+                else if ((item.paymentType || 'pontual') !== f.type) return false;
+            }
+            if (f.amount && !matchesAmountFilter(item.amount, f.amount)) return false;
+            return true;
+        }
+
+        // Cria a linha de filtros abaixo dos títulos das 3 tabelas de despesas
+        function buildColumnFilterRows() {
+            const inputCls = 'w-full min-w-[60px] bg-white border border-slate-200 rounded-md px-2 py-1 text-[11px] font-normal normal-case tracking-normal text-slate-700 outline-none focus:border-fuchsia-500';
+            Object.entries(COLUMN_FILTER_LAYOUT).forEach(([block, cols]) => {
+                const thead = document.getElementById(COLUMN_FILTER_TBODY[block]).closest('table').querySelector('thead');
+                const tr = document.createElement('tr');
+                tr.className = 'bg-white border-b border-slate-200';
+                tr.innerHTML = cols.map(col => {
+                    const attrs = `data-colfilter="${col}" data-block="${block}"`;
+                    if (col === 'actions') {
+                        return `<th class="py-2 px-4 text-right"><button type="button" data-clearfilters="${block}" class="hidden px-2 py-1 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-700 rounded-md text-[10px] font-semibold normal-case tracking-normal whitespace-nowrap">Limpar</button><span data-filtercount="${block}" class="hidden block text-[10px] font-normal normal-case tracking-normal text-slate-400 mt-0.5"></span></th>`;
+                    }
+                    if (['card', 'category', 'owner', 'type'].includes(col)) {
+                        return `<th class="py-2 px-4"><select ${attrs} class="${inputCls}"><option value="">Todos</option></select></th>`;
+                    }
+                    const ph = { date: 'dd/mm', desc: 'Contém...', amount: '>100, 50-200' }[col];
+                    return `<th class="py-2 px-4"><input type="search" ${attrs} placeholder="${ph}" class="${inputCls}"></th>`;
+                }).join('');
+                thead.appendChild(tr);
+            });
+            document.addEventListener('input', e => {
+                const el = e.target;
+                if (!el.dataset || !el.dataset.colfilter || el.tagName === 'SELECT') return;
+                colFilters[el.dataset.block][el.dataset.colfilter] = el.value;
+                calculateAndRender();
+            });
+            document.addEventListener('change', e => {
+                const el = e.target;
+                if (!el.dataset || !el.dataset.colfilter || el.tagName !== 'SELECT') return;
+                colFilters[el.dataset.block][el.dataset.colfilter] = el.value;
+                calculateAndRender();
+            });
+            document.addEventListener('click', e => {
+                const btn = e.target.closest && e.target.closest('[data-clearfilters]');
+                if (!btn) return;
+                const block = btn.dataset.clearfilters;
+                Object.keys(colFilters[block]).forEach(k => { colFilters[block][k] = ''; });
+                document.querySelectorAll(`[data-colfilter][data-block="${block}"]`).forEach(el => { el.value = ''; });
+                calculateAndRender();
+            });
+        }
+
+        // Opções das listas (cartão, categoria, responsável, tipo) com o que existe no mês, mantendo a escolha atual
+        function updateColumnFilterOptions(block, list) {
+            const setOptions = (col, entries) => {
+                const sel = document.querySelector(`select[data-colfilter="${col}"][data-block="${block}"]`);
+                if (!sel) return;
+                const current = colFilters[block][col];
+                if (current && !entries.some(([v]) => v === current)) entries.push([current, current]);
+                sel.innerHTML = '<option value="">Todos</option>' + entries
+                    .map(([v, label]) => `<option value="${escapeHtml(v)}">${escapeHtml(label)}</option>`).join('');
+                sel.value = current;
+                sel.classList.toggle('border-fuchsia-400', !!current);
+            };
+            const uniq = (fn) => [...new Map(list.map(x => fn(x)).filter(Boolean).map(([v, l]) => [v, l])).entries()]
+                .sort((a, b) => a[1].localeCompare(b[1]));
+            if (block === 'cartao') setOptions('card', uniq(x => x.cardName ? [x.cardName, x.cardName] : null));
+            setOptions('category', uniq(x => {
+                const key = CATEGORIES[x.category] ? x.category : 'outros';
+                return [key, CATEGORIES[key].label];
+            }));
+            setOptions('owner', uniq(x => [ownerFilterKey(x), x.payTo ? `Pagar a ${x.payTo}` : (isMine(x) ? 'EU' : x.owner)]));
+            const types = uniq(x => [x.paymentType || 'pontual', PAYMENT_TYPE_LABELS[x.paymentType || 'pontual']]);
+            if (list.some(x => x.isProjection)) types.push(['projecao', 'Só projeções']);
+            setOptions('type', types);
+        }
+
+        function updateColumnFilterStatus(block, shown, total) {
+            const active = Object.values(colFilters[block]).some(Boolean);
+            document.querySelectorAll(`[data-colfilter][data-block="${block}"]`).forEach(el => {
+                el.classList.toggle('border-fuchsia-400', !!el.value);
+                el.classList.toggle('bg-fuchsia-50', !!el.value);
+            });
+            const btn = document.querySelector(`[data-clearfilters="${block}"]`);
+            const count = document.querySelector(`[data-filtercount="${block}"]`);
+            if (btn) btn.classList.toggle('hidden', !active);
+            if (count) {
+                count.classList.toggle('hidden', !active);
+                count.textContent = `${shown} de ${total}`;
+            }
+        }
+
+        buildColumnFilterRows();
 
         // Data dia/mês do lançamento (no cartão é a data da compra)
         function dateCell(item) {
